@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Plus, Edit, Trash2, Eye, Search, Calendar } from "lucide-react"
+import { Plus, Edit, Trash2, Eye, Search, Calendar, CalendarDays } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -16,6 +16,8 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { mockShowtimes, mockCinemas, mockScreens, mockMovies } from "@/lib/mock-data"
 import { ShowtimeDialog } from "@/components/showtimes/showtime-dialog"
+import { BatchShowtimeDialog } from "@/components/showtimes/batch-showtime-dialog"
+import { BatchScheduleDialog } from "@/components/showtimes/batch-schedule-dialog"
 
 export default function ShowtimesPage() {
   const [searchTerm, setSearchTerm] = useState("")
@@ -29,6 +31,12 @@ export default function ShowtimesPage() {
   const [isShowtimeDialogOpen, setIsShowtimeDialogOpen] = useState(false)
   const [selectedShowtime, setSelectedShowtime] = useState(null)
   const [dialogMode, setDialogMode] = useState("view") // view, edit, add
+
+  // Batch showtime dialog state
+  const [isBatchDialogOpen, setIsBatchDialogOpen] = useState(false)
+
+  // Batch schedule dialog state
+  const [isBatchScheduleDialogOpen, setIsBatchScheduleDialogOpen] = useState(false)
 
   const filteredShowtimes = showtimes.filter((showtime) => {
     const movie = mockMovies.find((m) => m.id === showtime.movieId)
@@ -82,6 +90,14 @@ export default function ShowtimesPage() {
     setIsShowtimeDialogOpen(true)
   }
 
+  const handleOpenBatchDialog = () => {
+    setIsBatchDialogOpen(true)
+  }
+
+  const handleOpenBatchScheduleDialog = () => {
+    setIsBatchScheduleDialogOpen(true)
+  }
+
   const handleSaveShowtime = (showtimeData) => {
     if (dialogMode === "add") {
       // Add new showtime
@@ -92,6 +108,11 @@ export default function ShowtimesPage() {
     }
   }
 
+  const handleSaveBatchShowtime = (showtimeData) => {
+    // Add new showtime from batch dialog
+    setShowtimes([...showtimes, showtimeData])
+  }
+
   return (
     <div className="space-y-5">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -100,6 +121,15 @@ export default function ShowtimesPage() {
           <Button
             variant="outline"
             className="border-gray-200 bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900"
+            onClick={handleOpenBatchScheduleDialog}
+          >
+            <CalendarDays className="mr-2 h-4 w-4" />
+            Thêm theo lịch
+          </Button>
+          <Button
+            variant="outline"
+            className="border-gray-200 bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900"
+            onClick={handleOpenBatchDialog}
           >
             <Calendar className="mr-2 h-4 w-4" />
             Thêm hàng loạt
@@ -245,6 +275,20 @@ export default function ShowtimesPage() {
         showtime={selectedShowtime}
         mode={dialogMode}
         onSave={handleSaveShowtime}
+      />
+
+      {/* Batch Showtime Dialog */}
+      <BatchShowtimeDialog
+        isOpen={isBatchDialogOpen}
+        onClose={() => setIsBatchDialogOpen(false)}
+        onSave={handleSaveBatchShowtime}
+      />
+
+      {/* Batch Schedule Dialog */}
+      <BatchScheduleDialog
+        isOpen={isBatchScheduleDialogOpen}
+        onClose={() => setIsBatchScheduleDialogOpen(false)}
+        onSave={handleSaveBatchShowtime}
       />
     </div>
   )

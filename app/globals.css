@@ -92,3 +92,23 @@ body {
     @apply bg-background text-foreground;
   }
 }
+
+.bg-tag-p{
+  background-color: #2bcc02;
+}
+
+.bg-tag-k{
+  background-color: #008db1;
+}
+
+.bg-tag-c13{
+  background-color: #ffee00;
+}
+
+.bg-tag-c16{
+  background-color: #faab00;
+}
+
+.bg-tag-c18{
+  background-color: #ff0000;
+}

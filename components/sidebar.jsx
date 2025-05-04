@@ -12,13 +12,9 @@ import {
   Ticket,
   Settings,
   LogOut,
-  Menu,
-  X,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
-import { useState } from "react"
-import { useMobile } from "@/hooks/use-mobile"
 
 const navItems = [
   {
@@ -65,12 +61,6 @@ const navItems = [
 
 export function Sidebar() {
   const pathname = usePathname()
-  const isMobile = useMobile()
-  const [isOpen, setIsOpen] = useState(false)
-
-  const toggleSidebar = () => {
-    setIsOpen(!isOpen)
-  }
 
   const sidebarContent = (
     <>
@@ -82,7 +72,7 @@ export function Sidebar() {
           {navItems.map((item) => {
             const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`)
             return (
-              <Link key={item.href} href={item.href} onClick={() => isMobile && setIsOpen(false)}>
+              <Link key={item.href} href={item.href}>
                 <div
                   className={cn(
                     "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-all",
@@ -105,33 +95,6 @@ export function Sidebar() {
       </div>
     </>
   )
-
-  if (isMobile) {
-    return (
-      <>
-        <Button variant="ghost" size="icon" className="fixed left-4 top-4 z-50 md:hidden" onClick={toggleSidebar}>
-          <Menu className="h-6 w-6" />
-        </Button>
-        {isOpen && <div className="fixed inset-0 z-40 bg-black/20" onClick={() => setIsOpen(false)} />}
-        <div
-          className={cn(
-            "fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transition-transform duration-200 ease-in-out md:hidden",
-            isOpen ? "translate-x-0" : "-translate-x-full",
-          )}
-        >
-          <div className="flex h-full flex-col">
-            <div className="flex items-center justify-between border-b px-4 py-3">
-              <h1 className="text-xl font-bold text-gray-800">Cinema Admin</h1>
-              <Button variant="ghost" size="icon" onClick={() => setIsOpen(false)}>
-                <X className="h-5 w-5" />
-              </Button>
-            </div>
-            {sidebarContent}
-          </div>
-        </div>
-      </>
-    )
-  }
 
   return (
     <div className="hidden h-full w-64 flex-col border-r bg-white md:flex">

@@ -21,31 +21,15 @@ import { cn } from "@/lib/utils"
 import { format } from "date-fns"
 import { vi } from "date-fns/locale"
 import { Badge } from "@/components/ui/badge"
-
+import { useGetGenres } from "@/hooks/use-genre"
+import { useGetMovieById } from "@/hooks/use-movie"
 // Mock data for tags and genres
-const movieTags = ["Hot", "New Release", "Coming Soon", "Exclusive", "Award Winner", "Classic"]
-const movieGenres = [
-  "Action",
-  "Adventure",
-  "Animation",
-  "Comedy",
-  "Crime",
-  "Documentary",
-  "Drama",
-  "Fantasy",
-  "Horror",
-  "Mystery",
-  "Romance",
-  "Sci-Fi",
-  "Thriller",
-  "Western",
-  "Family",
-  "Musical",
-  "Biography",
-  "History",
-]
+const movieTags = ["P", "K", "C13", "C16", "C18"]
 
 export function MovieDialog({ isOpen, onClose, movie, mode = "view", onSave, setDialogMode, setIsMovieDialogOpen }) {
+  const { data: genres, isLoading: genresLoading, error: genresError } = useGetGenres()
+  const { data: movieDetails, isLoading: movieDetailsLoading, error: movieDetailsError } = useGetMovieById(movie?.id)
+
   const isViewMode = mode === "view"
   const isEditMode = mode === "edit"
   const isAddMode = mode === "add"
@@ -63,7 +47,7 @@ export function MovieDialog({ isOpen, onClose, movie, mode = "view", onSave, set
     trailerUrl: "",
     tag: "",
     genres: [],
-    status: "showing",
+    status: "new",
     posterUrl: "",
     bannerUrl: "",
   })
@@ -79,35 +63,49 @@ export function MovieDialog({ isOpen, onClose, movie, mode = "view", onSave, set
   useEffect(() => {
     if (movie && (isViewMode || isEditMode)) {
       // Convert string arrays to arrays if they're not already
-      const directors = Array.isArray(movie.directors)
-        ? movie.directors
-        : movie.director
-          ? movie.director.split(", ")
-          : []
-      const casters = Array.isArray(movie.casters) ? movie.casters : movie.cast ? movie.cast.split(", ") : []
-      const genres = Array.isArray(movie.genres) ? movie.genres : movie.genre ? movie.genre.split(", ") : []
-
+      const directors = movieDetails?.director.split(",") || []
+      const casters = movieDetails?.caster.split(",") || []
+      const genres = Array.isArray(movieDetails?.genres) ? movieDetails?.genres : movieDetails?.genre ? movieDetails?.genre.split(", ") : []
+      
+      console.log(directors)
+      console.log(casters)
+      console.log(genres)
+      
       setFormData({
         ...movie,
         duration: movie.duration.toString(),
         directors,
         casters,
+        trailerUrl: movie.trailer_url,
+        status: movie.status,
         genres,
       })
 
-      if (movie.releaseDate) {
-        setDate(new Date(movie.releaseDate))
+      if (movie.release_date) {
+        setDate(new Date(movie.release_date))
       }
 
-      if (movie.posterUrl) {
-        setPosterPreview(movie.posterUrl)
+      // Set poster preview and dimensions
+      if (movie.poster_url) {
+        const img = new Image()
+        img.onload = () => {
+          setPosterDimensions({ width: img.width, height: img.height })
+        }
+        img.src = movie.poster_url
+        setPosterPreview(movie.poster_url)
       }
 
-      if (movie.bannerUrl) {
-        setBannerPreview(movie.bannerUrl)
+      // Set banner preview and dimensions
+      if (movie.large_poster_url) {
+        const img = new Image()
+        img.onload = () => {
+          setBannerDimensions({ width: img.width, height: img.height })
+        }
+        img.src = movie.large_poster_url
+        setBannerPreview(movie.large_poster_url)
       }
     }
-  }, [movie, isViewMode, isEditMode])
+  }, [movie, isViewMode, isEditMode, movieDetails])
 
   const handleChange = (e) => {
     const { name, value } = e.target
@@ -224,8 +222,8 @@ export function MovieDialog({ isOpen, onClose, movie, mode = "view", onSave, set
   const dialogTitle = isAddMode ? "Thêm phim mới" : isEditMode ? "Chỉnh sửa phim" : "Chi tiết phim"
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+    <Dialog open={isOpen} onOpenChange={onClose} >
+      <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto scrollbar-none">
         <DialogHeader>
           <DialogTitle className="text-xl">{dialogTitle}</DialogTitle>
           {!isViewMode && (
@@ -430,9 +428,9 @@ export function MovieDialog({ isOpen, onClose, movie, mode = "view", onSave, set
                         <SelectValue placeholder="Chọn trạng thái" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="showing">Đang chiếu</SelectItem>
-                        <SelectItem value="coming_soon">Sắp chiếu</SelectItem>
-                        <SelectItem value="ended">Ngừng chiếu</SelectItem>
+                        <SelectItem value="new">Đang chiếu</SelectItem>
+                        <SelectItem value="incoming">Sắp chiếu</SelectItem>
+                        <SelectItem value="hidden">Ngừng chiếu</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -442,19 +440,19 @@ export function MovieDialog({ isOpen, onClose, movie, mode = "view", onSave, set
                     <Tag className="h-4 w-4" /> Thể loại
                   </Label>
                   <div className="flex flex-wrap gap-2 p-3 border rounded-md">
-                    {movieGenres.map((genre) => (
+                    {genres.map((genre) => (
                       <Badge
-                        key={genre}
-                        variant={formData.genres.includes(genre) ? "default" : "outline"}
+                        key={genre.id}
+                        variant={formData.genres.includes(genre.name) ? "default" : "outline"}
                         className={cn(
                           "cursor-pointer",
-                          formData.genres.includes(genre)
+                          formData.genres.includes(genre.name)
                             ? "bg-blue-500 hover:bg-blue-600"
                             : "bg-transparent text-gray-700 hover:bg-gray-100",
                         )}
-                        onClick={() => !isViewMode && handleMultiSelectChange("genres", genre)}
+                        onClick={() => !isViewMode && handleMultiSelectChange("genres", genre.name)}
                       >
-                        {genre}
+                        {genre.name}
                       </Badge>
                     ))}
                   </div>
