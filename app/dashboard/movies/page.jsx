@@ -3,7 +3,6 @@
 import { useState } from "react"
 import { Plus, Search } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import {
   Dialog,
   DialogContent,
@@ -14,8 +13,12 @@ import {
 } from "@/components/ui/dialog"
 import { MovieDialog } from "@/components/movies/movie-dialog"
 import MovieList from "@/components/movies/movie-list"
+import { useCreateMovie } from "@/hooks/use-movie"
+import { format } from "date-fns"
 
 export default function MoviesPage() {
+  const { mutate, data, isLoading, error } = useCreateMovie()
+
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [movieToDelete, setMovieToDelete] = useState(null)
   const [movies, setMovies] = useState()
@@ -65,24 +68,32 @@ export default function MoviesPage() {
 
   const handleSaveMovie = (movieData) => {
     if (dialogMode === "add") {
-      // Add new movie with a new ID
-      const newMovie = {
-        ...movieData,
-        id: Math.max(...movies.map((m) => m.id)) + 1,
-        // Ensure these fields are arrays even if they come as strings
-        directors: Array.isArray(movieData.directors)
-          ? movieData.directors
-          : movieData.director
-            ? movieData.director.split(", ")
-            : [],
-        casters: Array.isArray(movieData.casters)
-          ? movieData.casters
-          : movieData.cast
-            ? movieData.cast.split(", ")
-            : [],
-        genres: Array.isArray(movieData.genres) ? movieData.genres : movieData.genre ? movieData.genre.split(", ") : [],
+      const formData = new FormData()
+      console.log(movieData)
+      formData.append("title", movieData.title)
+      formData.append("description", movieData.description)
+      formData.append("duration", movieData.duration)
+      movieData.genre.forEach((genre) => {
+        formData.append("genres", genre)
+      })
+      movieData.directors.forEach((director) => {
+        formData.append("director", director)
+      })
+      movieData.cast.forEach((caster) => {
+        formData.append("caster", caster)
+      })
+      formData.append("poster_image", movieData.poster)
+      formData.append("large_poster_image", movieData.banner)
+      formData.append("trailer_url", movieData.trailerUrl)
+      formData.append("status", movieData.status)
+      formData.append("release_date", format(movieData.releaseDate, "dd-MM-yyyy"))
+      formData.append("tag", movieData.tag)
+
+      console.log(formData)
+      mutate(formData)
+      if (data) {
+        setMovies([...movies, data])
       }
-      setMovies([...movies, newMovie])
     } else if (dialogMode === "edit") {
       // Update existing movie
       setMovies(

@@ -1,5 +1,5 @@
-import { useQuery } from "@tanstack/react-query"
-import { getMovies, getMovieById } from "@/services/movie-service"
+import { useQuery, useMutation } from "@tanstack/react-query"
+import { getMovies, getMovieById, createMovie } from "@/services/movie-service"
 
 export const useGetMovies = () => {
   const { data, isLoading, error } = useQuery({
@@ -28,4 +28,16 @@ export const useGetMovieById = (id) => {
   }
 }
 
+export const useCreateMovie = () => {
+  const { data, isLoading, error, mutate } = useMutation({
+    mutationFn: (formData) => createMovie(formData),
+  })
+
+  return {
+    data: data?.body || null,
+    isLoading,
+    error: error?.message || null,
+    mutate: mutate,
+  }
+}
 

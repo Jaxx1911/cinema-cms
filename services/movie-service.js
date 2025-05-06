@@ -17,6 +17,12 @@ export const getMovieById = async (id) => {
   return response.data
 }
 
+export const createMovie = async (movie) => {
+  baseQuery.defaults.headers.common["Content-Type"] = "multipart/form-data"
+  console.log(movie)
+  const response = await baseQuery.postForm("/movie", movie)
+  return response.data
+}
 
 
 
