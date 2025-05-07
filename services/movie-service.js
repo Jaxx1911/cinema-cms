@@ -7,8 +7,8 @@ const baseQuery = axios.create({
   },
 })
 
-export const getMovies = async () => {
-  const response = await baseQuery.get("/movie/list")
+export const getMovies = async (page = 1, limit = 10) => {
+  const response = await baseQuery.get(`/movie/list?page=${page}&limit=${limit}`)
   return response.data
 }
 
@@ -19,10 +19,14 @@ export const getMovieById = async (id) => {
 
 export const createMovie = async (movie) => {
   baseQuery.defaults.headers.common["Content-Type"] = "multipart/form-data"
-  console.log(movie)
   const response = await baseQuery.postForm("/movie", movie)
   return response.data
 }
 
-
+export const updateMovie = async (id, movie) => {
+  baseQuery.defaults.headers.common["Content-Type"] = "multipart/form-data"
+  console.log(movie)
+  const response = await baseQuery.putForm(`/movie/${id}`, movie)
+  return response.data
+}
 

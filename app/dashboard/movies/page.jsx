@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Plus, Search } from "lucide-react"
+import { Plus, Search, CheckCircle2, XCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -13,11 +13,14 @@ import {
 } from "@/components/ui/dialog"
 import { MovieDialog } from "@/components/movies/movie-dialog"
 import MovieList from "@/components/movies/movie-list"
-import { useCreateMovie } from "@/hooks/use-movie"
+import { useCreateMovie, useUpdateMovie } from "@/hooks/use-movie"
 import { format } from "date-fns"
+import { useToast } from "@/hooks/use-toast"
 
 export default function MoviesPage() {
+  const { toast } = useToast()
   const { mutate, data, isLoading, error } = useCreateMovie()
+  const { mutate: updateMovie, data: updateData, isLoading: updateLoading, error: updateError } = useUpdateMovie()
 
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [movieToDelete, setMovieToDelete] = useState(null)
@@ -27,8 +30,6 @@ export default function MoviesPage() {
   const [isMovieDialogOpen, setIsMovieDialogOpen] = useState(false)
   const [selectedMovie, setSelectedMovie] = useState(null)
   const [dialogMode, setDialogMode] = useState("view") // view, edit, add
-
-  const filteredMovies = movies?.filter((movie) => movie.title.toLowerCase().includes(searchTerm.toLowerCase()))
 
   const handleDeleteClick = (id) => {
     setMovieToDelete(id)
@@ -69,7 +70,6 @@ export default function MoviesPage() {
   const handleSaveMovie = (movieData) => {
     if (dialogMode === "add") {
       const formData = new FormData()
-      console.log(movieData)
       formData.append("title", movieData.title)
       formData.append("description", movieData.description)
       formData.append("duration", movieData.duration)
@@ -89,38 +89,72 @@ export default function MoviesPage() {
       formData.append("release_date", format(movieData.releaseDate, "dd-MM-yyyy"))
       formData.append("tag", movieData.tag)
 
-      console.log(formData)
-      mutate(formData)
+      mutate(formData, {
+        onSuccess: () => {
+          toast({
+            title: "Thành công",
+            description: "Thêm phim mới thành công",
+            variant: "default",
+            icon: <CheckCircle2 className="h-5 w-5 text-green-500" />,
+          })
+          setIsMovieDialogOpen(false)
+        },
+        onError: (error) => {
+          toast({
+            title: "Lỗi",
+            description: error.message || "Có lỗi xảy ra khi thêm phim",
+            variant: "destructive",
+            icon: <XCircle className="h-5 w-5 text-red-500" />,
+          })
+        }
+      })
       if (data) {
         setMovies([...movies, data])
       }
     } else if (dialogMode === "edit") {
-      // Update existing movie
-      setMovies(
-        movies.map((movie) =>
-          movie.id === movieData.id
-            ? {
-                ...movieData,
-                // Ensure these fields are arrays even if they come as strings
-                directors: Array.isArray(movieData.directors)
-                  ? movieData.directors
-                  : movieData.director
-                    ? movieData.director.split(", ")
-                    : [],
-                casters: Array.isArray(movieData.casters)
-                  ? movieData.casters
-                  : movieData.cast
-                    ? movieData.cast.split(", ")
-                    : [],
-                genres: Array.isArray(movieData.genres)
-                  ? movieData.genres
-                  : movieData.genre
-                    ? movieData.genre.split(", ")
-                    : [],
-              }
-            : movie,
-        ),
-      )
+      const formData = new FormData()
+      formData.append("title", movieData.title)
+      formData.append("description", movieData.description)
+      formData.append("duration", movieData.duration)
+      movieData.genre.forEach((genre) => {
+        formData.append("genres", genre)
+      })
+      movieData.directors.forEach((director) => {
+        formData.append("director", director)
+      })
+      movieData.cast.forEach((caster) => {
+        formData.append("caster", caster)
+      })
+      if (movieData.poster) {
+        formData.append("poster_image", movieData.poster)
+      }
+      if (movieData.banner) {
+        formData.append("large_poster_image", movieData.banner)
+      }
+      formData.append("trailer_url", movieData.trailerUrl)
+      formData.append("status", movieData.status)
+      formData.append("release_date", format(new Date(movieData.releaseDate? movieData.releaseDate : movieData.release_date), "dd-MM-yyyy"))
+      formData.append("tag", movieData.tag)
+      
+      updateMovie({ id: movieData.id, formData }, {
+        onSuccess: () => {
+          toast({
+            title: "Thành công",
+            description: "Cập nhật phim thành công",
+            variant: "default",
+            icon: <CheckCircle2 className="h-5 w-5 text-green-500" />,
+          })
+          setIsMovieDialogOpen(false)
+        },
+        onError: (error) => {
+          toast({
+            title: "Lỗi",
+            description: error.message || "Có lỗi xảy ra khi cập nhật phim",
+            variant: "destructive",
+            icon: <XCircle className="h-5 w-5 text-red-500" />,
+          })
+        }
+      })
     }
   }
 

@@ -3,15 +3,21 @@
 import { useGetMovies } from "@/hooks/use-movie"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
-import { Eye, Edit, Trash2, Search } from "lucide-react"
+import { Eye, Edit, Trash2, Search, ChevronLeft, ChevronRight } from "lucide-react"
 import Image from "next/image"
 import { format } from "date-fns"
 import { Input } from "@/components/ui/input"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 
 export default function MovieList({handleViewMovie, handleEditMovie, handleDeleteClick}) {
-  const { data, isLoading, error } = useGetMovies()
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 10
+  const { data, isLoading, error, refetch } = useGetMovies(currentPage, itemsPerPage)
   const [searchTerm, setSearchTerm] = useState("")
+
+  useEffect(() => {
+    refetch(currentPage, itemsPerPage)
+  }, [currentPage, itemsPerPage, refetch])
 
   if (isLoading) {
     return <div>Loading...</div>
@@ -19,6 +25,22 @@ export default function MovieList({handleViewMovie, handleEditMovie, handleDelet
 
   if (error) {
     return <div>Error: {error}</div>
+  }
+
+  const filteredMovies = data.data.filter((movie) => 
+    movie.title.toLowerCase().includes(searchTerm.toLowerCase())
+  )
+
+  const totalPages = Math.ceil(data.total_count / itemsPerPage)
+  const startIndex = (currentPage - 1) * itemsPerPage
+  const endIndex = startIndex + itemsPerPage
+
+  const handlePreviousPage = () => {
+    setCurrentPage((prev) => Math.max(prev - 1, 1))
+  }
+
+  const handleNextPage = () => {
+    setCurrentPage((prev) => Math.min(prev + 1, totalPages))
   }
   
   return (
@@ -48,7 +70,7 @@ export default function MovieList({handleViewMovie, handleEditMovie, handleDelet
           </TableRow>
         </TableHeader>
         <TableBody>
-          {data.filter((movie) => movie.title.toLowerCase().includes(searchTerm.toLowerCase())).map((movie) => (
+          {filteredMovies.map((movie) => (
             <TableRow key={movie.id} className="hover:bg-gray-50">
               <TableCell>
                 <div className="relative h-12 w-8 overflow-hidden rounded">
@@ -139,6 +161,32 @@ export default function MovieList({handleViewMovie, handleEditMovie, handleDelet
           ))}
         </TableBody>
       </Table>
+    </div>
+    <div className="flex items-center justify-between mt-4">
+      <div className="text-sm text-gray-500">
+        Hiển thị {startIndex + 1}-{Math.min(endIndex, data.total_count)} của {data.total_count} phim
+      </div>
+      <div className="flex items-center space-x-2">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handlePreviousPage}
+          disabled={currentPage === 1}
+        >
+          <ChevronLeft className="h-4 w-4" />
+        </Button>
+        <span className="text-sm">
+          Trang {currentPage} / {totalPages}
+        </span>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleNextPage}
+          disabled={currentPage === totalPages}
+        >
+          <ChevronRight className="h-4 w-4" />
+        </Button>
+      </div>
     </div>
     </>
   )

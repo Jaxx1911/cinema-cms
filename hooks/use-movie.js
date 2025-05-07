@@ -1,16 +1,17 @@
-import { useQuery, useMutation } from "@tanstack/react-query"
-import { getMovies, getMovieById, createMovie } from "@/services/movie-service"
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { getMovies, getMovieById, createMovie, updateMovie } from "@/services/movie-service"
 
-export const useGetMovies = () => {
-  const { data, isLoading, error } = useQuery({
-    queryKey: ["movies"],
-    queryFn: getMovies,
+export const useGetMovies = (page = 1, limit = 10) => {
+  const { data, isLoading, error, refetch } = useQuery({
+    queryKey: ["movies", page, limit],
+    queryFn: () => getMovies(page, limit),
   })
 
   return { 
-    data: data?.body || [], 
+    data: data?.body || { data: [], total_count: 0 }, 
     isLoading, 
-    error: error?.message || null 
+    error: error?.message || null,
+    refetch: (newPage, newLimit) => refetch({ queryKey: ["movies", newPage, newLimit] }),
   }
 }
 
@@ -31,6 +32,25 @@ export const useGetMovieById = (id) => {
 export const useCreateMovie = () => {
   const { data, isLoading, error, mutate } = useMutation({
     mutationFn: (formData) => createMovie(formData),
+  })
+
+  return {
+    data: data?.body || null,
+    isLoading,
+    error: error?.message || null,
+    mutate: mutate,
+  }
+}
+
+export const useUpdateMovie = () => {
+  const queryClient = useQueryClient()
+  const { data, isLoading, error, mutate } = useMutation({
+    mutationFn: ({ id, formData }) => updateMovie(id, formData),
+    onSuccess: () => {
+      // Invalidate and refetch
+      queryClient.invalidateQueries({ queryKey: ["movies"] })
+      queryClient.invalidateQueries({ queryKey: ["movie"] })
+    },
   })
 
   return {
