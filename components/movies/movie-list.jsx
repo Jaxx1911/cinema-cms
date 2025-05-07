@@ -3,29 +3,32 @@
 import { useGetMovies } from "@/hooks/use-movie"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
-import { Eye, Edit, StopCircleIcon, Search, ChevronLeft, ChevronRight, Filter, PlayCircleIcon } from "lucide-react"
+import { Eye, Edit, StopCircleIcon, ChevronLeft, ChevronRight, PlayCircleIcon } from "lucide-react"
 import Image from "next/image"
 import { format } from "date-fns"
-import { Input } from "@/components/ui/input"
 import { useState, useEffect } from "react"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-export default function MovieList({handleViewMovie, handleEditMovie, handleStopMovie, handleResumeMovie}) {
+
+export default function MovieList({
+  handleViewMovie, 
+  handleEditMovie, 
+  handleStopMovie, 
+  handleResumeMovie,  
+  statusFilter,
+  tagFilter,
+  searchInputRef,
+  debouncedSearchTerm,
+}) {
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 10
-  const [searchTerm, setSearchTerm] = useState("")
-  const [statusFilter, setStatusFilter] = useState("all")
-  const [tagFilter, setTagFilter] = useState("all")
-  const { data, isLoading, error, refetch } = useGetMovies(currentPage, itemsPerPage, searchTerm, statusFilter, tagFilter)
+  
+  const { data, isLoading, error, refetch } = useGetMovies(currentPage, itemsPerPage, debouncedSearchTerm, statusFilter, tagFilter)
+
   useEffect(() => {
-    console.log(searchTerm, statusFilter, tagFilter)
-    refetch(currentPage, itemsPerPage, searchTerm, statusFilter, tagFilter)
-  }, [currentPage, itemsPerPage, refetch, searchTerm, statusFilter, tagFilter])
+    refetch(currentPage, itemsPerPage, debouncedSearchTerm, statusFilter, tagFilter)
+    if (searchInputRef.current) {
+      searchInputRef.current.focus()
+    }
+  }, [currentPage, itemsPerPage, refetch, debouncedSearchTerm, statusFilter, tagFilter])
 
   if (isLoading) {
     return <div>Loading...</div>
@@ -49,52 +52,6 @@ export default function MovieList({handleViewMovie, handleEditMovie, handleStopM
   
   return (
     <>
-      <div className="relative flex mb-4 gap-2">
-        <div className="w-[90%]">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-          <Input
-            type="search"
-            placeholder="Tìm kiếm phim..."
-            className="pl-9"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
-          <DropdownMenu className="w-[10%]">
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="gap-2">
-                <Filter className="h-4 w-4" />
-                {statusFilter === "all" ? "Lọc theo trạng thái" : statusFilter === "new" ? "Mới" : statusFilter === "incoming" ? "Sắp chiếu" : "Ngừng chiếu"}
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuRadioGroup value={statusFilter} onValueChange={setStatusFilter}>
-                <DropdownMenuRadioItem value="all">Tất cả</DropdownMenuRadioItem>
-                <DropdownMenuRadioItem value="new">Mới</DropdownMenuRadioItem>
-                <DropdownMenuRadioItem value="incoming">Sắp chiếu</DropdownMenuRadioItem>
-                <DropdownMenuRadioItem value="stop">Ngừng chiếu</DropdownMenuRadioItem>
-              </DropdownMenuRadioGroup>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          <DropdownMenu className="w-[10%]">
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="gap-2">
-                <Filter className="h-4 w-4" />
-                {tagFilter === "all" ? "Lọc theo nhãn" : tagFilter === "P" ? "P" : tagFilter === "K" ? "K" : tagFilter === "C13" ? "C13" : tagFilter === "C16" ? "C16" : tagFilter === "C18" ? "C18" : "Tất cả"}
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuRadioGroup value={tagFilter} onValueChange={setTagFilter}>
-                <DropdownMenuRadioItem value="all">Tất cả</DropdownMenuRadioItem>
-                <DropdownMenuRadioItem value="P">P</DropdownMenuRadioItem>
-                <DropdownMenuRadioItem value="K">K</DropdownMenuRadioItem>
-                <DropdownMenuRadioItem value="C13">C13</DropdownMenuRadioItem>
-                <DropdownMenuRadioItem value="C16">C16</DropdownMenuRadioItem>
-                <DropdownMenuRadioItem value="C18">C18</DropdownMenuRadioItem>
-              </DropdownMenuRadioGroup>
-            </DropdownMenuContent>
-          </DropdownMenu>
-      </div>
       <div className="rounded-md border">
         <Table>
         <TableHeader className="bg-gray-50">
