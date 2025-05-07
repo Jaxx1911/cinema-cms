@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Edit, Trash2, Eye } from "lucide-react"
+import { Edit, Trash2, Eye, Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import {
@@ -14,23 +14,23 @@ import {
 } from "@/components/ui/dialog"
 import { RoomDialog } from "./room-dialog"
 
-export function ScreensTable({ screens, cinemaId }) {
+export function RoomsTable({ rooms, cinemaId }) {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
-  const [screenToDelete, setScreenToDelete] = useState(null)
+  const [roomToDelete, setRoomToDelete] = useState(null)
   const [isRoomDialogOpen, setIsRoomDialogOpen] = useState(false)
   const [selectedRoom, setSelectedRoom] = useState(null)
   const [dialogMode, setDialogMode] = useState("view")
 
   const handleDeleteClick = (id) => {
-    setScreenToDelete(id)
+    setRoomToDelete(id)
     setIsDeleteDialogOpen(true)
   }
 
   const handleDeleteConfirm = () => {
-    // In a real app, you would delete the screen here
-    console.log(`Deleting screen with ID: ${screenToDelete}`)
+    // In a real app, you would delete the room here
+    console.log(`Deleting room with ID: ${roomToDelete}`)
     setIsDeleteDialogOpen(false)
-    setScreenToDelete(null)
+    setRoomToDelete(null)
   }
 
   const handleViewRoom = (room) => {
@@ -74,38 +74,38 @@ export function ScreensTable({ screens, cinemaId }) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {screens.length === 0 ? (
+            {rooms.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={8} className="h-24 text-center text-gray-500">
                   Không có phòng chiếu nào
                 </TableCell>
               </TableRow>
             ) : (
-              screens.map((screen) => (
-                <TableRow key={screen.id} className="hover:bg-gray-50">
-                  <TableCell className="font-medium">{screen.id}</TableCell>
-                  <TableCell className="font-medium text-blue-600">{screen.name}</TableCell>
-                  <TableCell>{screen.capacity} ghế</TableCell>
+              rooms.map((room) => (
+                <TableRow key={room.id} className="hover:bg-gray-50">
+                  <TableCell className="font-medium">{room.id}</TableCell>
+                  <TableCell className="font-medium text-blue-600">{room.name}</TableCell>
+                  <TableCell>{room.capacity} ghế</TableCell>
                   <TableCell>
-                    {screen.type === "2d"
+                    {room.type === "2d"
                       ? "2D"
-                      : screen.type === "3d"
+                      : room.type === "3d"
                         ? "3D"
-                        : screen.type === "4dx"
+                        : room.type === "4dx"
                           ? "4DX"
-                          : screen.type === "imax"
+                          : room.type === "imax"
                             ? "IMAX"
-                            : screen.type}
+                            : room.type}
                   </TableCell>
-                  <TableCell>{screen.rows}</TableCell>
-                  <TableCell>{screen.columns}</TableCell>
+                  <TableCell>{room.rows}</TableCell>
+                  <TableCell>{room.columns}</TableCell>
                   <TableCell>
                     <div
                       className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${
-                        screen.status === "active" ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800"
+                        room.status === "active" ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800"
                       }`}
                     >
-                      {screen.status === "active" ? "Hoạt động" : "Bảo trì"}
+                      {room.status === "active" ? "Hoạt động" : "Bảo trì"}
                     </div>
                   </TableCell>
                   <TableCell>
@@ -114,7 +114,7 @@ export function ScreensTable({ screens, cinemaId }) {
                         variant="ghost"
                         size="icon"
                         className="text-gray-500 hover:text-blue-600"
-                        onClick={() => handleViewRoom(screen)}
+                        onClick={() => handleViewRoom(room)}
                       >
                         <Eye className="h-4 w-4" />
                         <span className="sr-only">Xem chi tiết</span>
@@ -123,7 +123,7 @@ export function ScreensTable({ screens, cinemaId }) {
                         variant="ghost"
                         size="icon"
                         className="text-gray-500 hover:text-blue-600"
-                        onClick={() => handleEditRoom(screen)}
+                        onClick={() => handleEditRoom(room)}
                       >
                         <Edit className="h-4 w-4" />
                         <span className="sr-only">Chỉnh sửa</span>
@@ -131,7 +131,7 @@ export function ScreensTable({ screens, cinemaId }) {
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => handleDeleteClick(screen.id)}
+                        onClick={() => handleDeleteClick(room.id)}
                         className="text-gray-500 hover:text-red-600"
                       >
                         <Trash2 className="h-4 w-4" />
@@ -174,4 +174,4 @@ export function ScreensTable({ screens, cinemaId }) {
       />
     </>
   )
-} 
+}

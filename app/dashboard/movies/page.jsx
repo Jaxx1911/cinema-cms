@@ -26,7 +26,6 @@ export default function MoviesPage() {
   const [dialogMode, setDialogMode] = useState("view") // view, edit, add
 
   const filteredMovies = movies?.filter((movie) => movie.title.toLowerCase().includes(searchTerm.toLowerCase()))
-
   const handleDeleteClick = (id) => {
     setMovieToDelete(id)
     setIsDeleteDialogOpen(true)
