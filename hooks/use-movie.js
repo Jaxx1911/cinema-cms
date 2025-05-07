@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { getMovies, getMovieById, createMovie, updateMovie } from "@/services/movie-service"
+import { getMovies, getMovieById, createMovie, updateMovie, resumeMovie, stopMovie } from "@/services/movie-service"
 
 export const useGetMovies = (page = 1, limit = 10) => {
   const { data, isLoading, error, refetch } = useQuery({
@@ -51,6 +51,32 @@ export const useUpdateMovie = () => {
       queryClient.invalidateQueries({ queryKey: ["movies"] })
       queryClient.invalidateQueries({ queryKey: ["movie"] })
     },
+  })
+
+  return {
+    data: data?.body || null,
+    isLoading,
+    error: error?.message || null,
+    mutate: mutate,
+  }
+}
+
+export const useStopMovie = () => {
+  const { data, isLoading, error, mutate } = useMutation({
+    mutationFn: (id) => stopMovie(id),
+  })
+
+  return {
+    data: data?.body || null,
+    isLoading,
+    error: error?.message || null,
+    mutate: mutate,
+  }
+}
+
+export const useResumeMovie = () => {
+  const { data, isLoading, error, mutate } = useMutation({
+    mutationFn: (id) => resumeMovie(id),
   })
 
   return {

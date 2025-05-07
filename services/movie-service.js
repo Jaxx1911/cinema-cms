@@ -30,3 +30,12 @@ export const updateMovie = async (id, movie) => {
   return response.data
 }
 
+export const stopMovie = async (id) => {
+  const response = await baseQuery.put(`/movie/stop/${id}`)
+  return response.data
+}
+
+export const resumeMovie = async (id) => {
+  const response = await baseQuery.put(`/movie/reshow/${id}`)
+  return response.data
+}
