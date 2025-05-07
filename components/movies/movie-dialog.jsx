@@ -22,13 +22,18 @@ import { format } from "date-fns"
 import { vi } from "date-fns/locale"
 import { Badge } from "@/components/ui/badge"
 import { useGetGenres } from "@/hooks/use-genre"
-import { useGetMovieById } from "@/hooks/use-movie"
+import { useGetMovieById, useCreateMovie } from "@/hooks/use-movie"
 // Mock data for tags and genres
 const movieTags = ["P", "K", "C13", "C16", "C18"]
 
 export function MovieDialog({ isOpen, onClose, movie, mode = "view", onSave, setDialogMode, setIsMovieDialogOpen }) {
   const { data: genres, isLoading: genresLoading, error: genresError } = useGetGenres()
   const { data: movieDetails, isLoading: movieDetailsLoading, error: movieDetailsError } = useGetMovieById(movie?.id)
+
+  let genreMap = genres?.reduce((acc, genre) => {
+    acc[genre.name] = genre.id
+    return acc
+  }, {})
 
   const isViewMode = mode === "view"
   const isEditMode = mode === "edit"
@@ -50,6 +55,8 @@ export function MovieDialog({ isOpen, onClose, movie, mode = "view", onSave, set
     status: "new",
     posterUrl: "",
     bannerUrl: "",
+    poster: null,
+    banner: null,
   })
 
   const [date, setDate] = useState()
@@ -60,20 +67,17 @@ export function MovieDialog({ isOpen, onClose, movie, mode = "view", onSave, set
   const [posterDimensions, setPosterDimensions] = useState({ width: 0, height: 0 })
   const [bannerDimensions, setBannerDimensions] = useState({ width: 0, height: 0 })
 
+  
+
   useEffect(() => {
     if (movie && (isViewMode || isEditMode)) {
-      // Convert string arrays to arrays if they're not already
       const directors = movieDetails?.director.split(",") || []
       const casters = movieDetails?.caster.split(",") || []
       const genres = Array.isArray(movieDetails?.genres) ? movieDetails?.genres : movieDetails?.genre ? movieDetails?.genre.split(", ") : []
       
-      console.log(directors)
-      console.log(casters)
-      console.log(genres)
-      
       setFormData({
         ...movie,
-        duration: movie.duration.toString(),
+        duration: movie.duration,
         directors,
         casters,
         trailerUrl: movie.trailer_url,
@@ -180,7 +184,7 @@ export function MovieDialog({ isOpen, onClose, movie, mode = "view", onSave, set
         }
         img.src = reader.result
         setPosterPreview(reader.result)
-        setFormData((prev) => ({ ...prev, posterUrl: reader.result }))
+        setFormData((prev) => ({ ...prev, posterUrl: reader.result, poster: file }))
       }
       reader.readAsDataURL(file)
     }
@@ -197,7 +201,7 @@ export function MovieDialog({ isOpen, onClose, movie, mode = "view", onSave, set
         }
         img.src = reader.result
         setBannerPreview(reader.result)
-        setFormData((prev) => ({ ...prev, bannerUrl: reader.result }))
+        setFormData((prev) => ({ ...prev, bannerUrl: reader.result, banner: file }))
       }
       reader.readAsDataURL(file)
     }
@@ -210,9 +214,14 @@ export function MovieDialog({ isOpen, onClose, movie, mode = "view", onSave, set
     const processedData = {
       ...formData,
       duration: Number.parseInt(formData.duration, 10),
-      director: formData.directors.join(", "),
-      cast: formData.casters.join(", "),
-      genre: formData.genres.join(", "),
+      director: formData.directors,
+      cast: formData.casters,
+      genre: formData.genres.reduce((acc, genre) => {
+        acc.push(genreMap[genre])
+        return acc
+      }, []),
+      poster_image: formData.poster,
+      large_poster_image: formData.banner,
     }
 
     onSave(processedData)

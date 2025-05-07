@@ -3,15 +3,28 @@
 import { useGetMovies } from "@/hooks/use-movie"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
-import { Eye, Edit, Trash2, Search } from "lucide-react"
+import { Eye, Edit, StopCircleIcon, Search, ChevronLeft, ChevronRight, Filter, PlayCircleIcon } from "lucide-react"
 import Image from "next/image"
 import { format } from "date-fns"
 import { Input } from "@/components/ui/input"
-import { useState } from "react"
-
-export default function MovieList({handleViewMovie, handleEditMovie, handleDeleteClick}) {
-  const { data, isLoading, error } = useGetMovies()
+import { useState, useEffect } from "react"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+export default function MovieList({handleViewMovie, handleEditMovie, handleStopMovie, handleResumeMovie}) {
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 10
+  const { data, isLoading, error, refetch } = useGetMovies(currentPage, itemsPerPage)
   const [searchTerm, setSearchTerm] = useState("")
+  const [statusFilter, setStatusFilter] = useState("all")
+  const [tagFilter, setTagFilter] = useState("all")
+  useEffect(() => {
+    refetch(currentPage, itemsPerPage)
+  }, [currentPage, itemsPerPage, refetch])
 
   if (isLoading) {
     return <div>Loading...</div>
@@ -20,10 +33,29 @@ export default function MovieList({handleViewMovie, handleEditMovie, handleDelet
   if (error) {
     return <div>Error: {error}</div>
   }
+
+  const filteredMovies = data.data.filter((movie) => 
+    movie.title.toLowerCase().includes(searchTerm.toLowerCase()) &&
+    (statusFilter === "all" || movie.status === statusFilter) &&
+    (tagFilter === "all" || movie.tag === tagFilter)
+  )
+
+  const totalPages = Math.ceil(filteredMovies.length / itemsPerPage)
+  const startIndex = (currentPage - 1) * itemsPerPage
+  const endIndex = startIndex + itemsPerPage
+
+  const handlePreviousPage = () => {
+    setCurrentPage((prev) => Math.max(prev - 1, 1))
+  }
+
+  const handleNextPage = () => {
+    setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+  }
   
   return (
     <>
-      <div className="relative mb-4">
+      <div className="relative flex mb-4 gap-2">
+        <div className="w-[90%]">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
           <Input
             type="search"
@@ -32,6 +64,41 @@ export default function MovieList({handleViewMovie, handleEditMovie, handleDelet
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
+        </div>
+          <DropdownMenu className="w-[10%]">
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="gap-2">
+                <Filter className="h-4 w-4" />
+                {statusFilter === "all" ? "Lọc theo trạng thái" : statusFilter === "new" ? "Mới" : statusFilter === "incoming" ? "Sắp chiếu" : "Ngừng chiếu"}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuRadioGroup value={statusFilter} onValueChange={setStatusFilter}>
+                <DropdownMenuRadioItem value="all">Tất cả</DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="new">Mới</DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="incoming">Sắp chiếu</DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="stop">Ngừng chiếu</DropdownMenuRadioItem>
+              </DropdownMenuRadioGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <DropdownMenu className="w-[10%]">
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="gap-2">
+                <Filter className="h-4 w-4" />
+                {tagFilter === "all" ? "Lọc theo nhãn" : tagFilter === "P" ? "P" : tagFilter === "K" ? "K" : tagFilter === "C13" ? "C13" : tagFilter === "C16" ? "C16" : tagFilter === "C18" ? "C18" : "Tất cả"}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuRadioGroup value={tagFilter} onValueChange={setTagFilter}>
+                <DropdownMenuRadioItem value="all">Tất cả</DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="P">P</DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="K">K</DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="C13">C13</DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="C16">C16</DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="C18">C18</DropdownMenuRadioItem>
+              </DropdownMenuRadioGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
       </div>
       <div className="rounded-md border">
         <Table>
@@ -48,7 +115,7 @@ export default function MovieList({handleViewMovie, handleEditMovie, handleDelet
           </TableRow>
         </TableHeader>
         <TableBody>
-          {data.filter((movie) => movie.title.toLowerCase().includes(searchTerm.toLowerCase())).map((movie) => (
+          {filteredMovies.map((movie) => (
             <TableRow key={movie.id} className="hover:bg-gray-50">
               <TableCell>
                 <div className="relative h-12 w-8 overflow-hidden rounded">
@@ -127,11 +194,15 @@ export default function MovieList({handleViewMovie, handleEditMovie, handleDelet
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={() => handleDeleteClick(movie.id)}
-                    className="text-gray-500 hover:text-red-600"
+                    onClick={() => movie.status === "stop" ? handleResumeMovie(movie.id) : handleStopMovie(movie.id)}
+                    className={`${movie.status === "stop" ? "text-green-600" : "text-red-600"}`}
                   >
-                    <Trash2 className="h-4 w-4" />
-                    <span className="sr-only">Xóa</span>
+                    {movie.status === "stop" ? (
+                      <PlayCircleIcon className="h-4 w-4" />
+                    ) : (
+                      <StopCircleIcon className="h-4 w-4" />
+                    )}
+                    <span className="sr-only">Dừng chiếu</span>
                   </Button>
                 </div>
               </TableCell>
@@ -139,6 +210,32 @@ export default function MovieList({handleViewMovie, handleEditMovie, handleDelet
           ))}
         </TableBody>
       </Table>
+    </div>
+    <div className="flex items-center justify-between mt-4">
+      <div className="text-sm text-gray-500">
+        {filteredMovies.length > 0 ? `Hiển thị ${startIndex + 1}-${Math.min(endIndex, filteredMovies.length)} của ${filteredMovies.length} phim` : "Không có phim nào"}
+      </div>
+      <div className="flex items-center space-x-2">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handlePreviousPage}
+          disabled={currentPage === 1}
+        >
+          <ChevronLeft className="h-4 w-4" />
+        </Button>
+        <span className="text-sm">
+          Trang {currentPage} / {totalPages}
+        </span>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleNextPage}
+          disabled={currentPage === totalPages}
+        >
+          <ChevronRight className="h-4 w-4" />
+        </Button>
+      </div>
     </div>
     </>
   )
