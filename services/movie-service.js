@@ -7,8 +7,8 @@ const baseQuery = axios.create({
   },
 })
 
-export const getMovies = async (page = 1, limit = 10) => {
-  const response = await baseQuery.get(`/movie/list?page=${page}&limit=${limit}`)
+export const getMovies = async (page = 1, limit = 10, searchTerm = "", statusFilter = "all", tagFilter = "all") => {
+  const response = await baseQuery.get(`/movie/list?page=${page}&limit=${limit}&term=${searchTerm}&status=${statusFilter}&tag=${tagFilter}`)
   return response.data
 }
 

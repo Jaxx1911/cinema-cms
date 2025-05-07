@@ -1,10 +1,10 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { getMovies, getMovieById, createMovie, updateMovie, resumeMovie, stopMovie } from "@/services/movie-service"
 
-export const useGetMovies = (page = 1, limit = 10) => {
+export const useGetMovies = (page = 1, limit = 10, searchTerm, statusFilter, tagFilter) => {
   const { data, isLoading, error, refetch } = useQuery({
-    queryKey: ["movies", page, limit],
-    queryFn: () => getMovies(page, limit),
+    queryKey: ["movies", page, limit, searchTerm, statusFilter, tagFilter],
+    queryFn: () => getMovies(page, limit, searchTerm, statusFilter, tagFilter),
   })
 
   return { 

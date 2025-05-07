@@ -18,13 +18,14 @@ import {
 export default function MovieList({handleViewMovie, handleEditMovie, handleStopMovie, handleResumeMovie}) {
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 10
-  const { data, isLoading, error, refetch } = useGetMovies(currentPage, itemsPerPage)
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
   const [tagFilter, setTagFilter] = useState("all")
+  const { data, isLoading, error, refetch } = useGetMovies(currentPage, itemsPerPage, searchTerm, statusFilter, tagFilter)
   useEffect(() => {
-    refetch(currentPage, itemsPerPage)
-  }, [currentPage, itemsPerPage, refetch])
+    console.log(searchTerm, statusFilter, tagFilter)
+    refetch(currentPage, itemsPerPage, searchTerm, statusFilter, tagFilter)
+  }, [currentPage, itemsPerPage, refetch, searchTerm, statusFilter, tagFilter])
 
   if (isLoading) {
     return <div>Loading...</div>
@@ -34,13 +35,7 @@ export default function MovieList({handleViewMovie, handleEditMovie, handleStopM
     return <div>Error: {error}</div>
   }
 
-  const filteredMovies = data.data.filter((movie) => 
-    movie.title.toLowerCase().includes(searchTerm.toLowerCase()) &&
-    (statusFilter === "all" || movie.status === statusFilter) &&
-    (tagFilter === "all" || movie.tag === tagFilter)
-  )
-
-  const totalPages = Math.ceil(filteredMovies.length / itemsPerPage)
+  const totalPages = Math.ceil(data.total_count / itemsPerPage)
   const startIndex = (currentPage - 1) * itemsPerPage
   const endIndex = startIndex + itemsPerPage
 
@@ -115,7 +110,7 @@ export default function MovieList({handleViewMovie, handleEditMovie, handleStopM
           </TableRow>
         </TableHeader>
         <TableBody>
-          {filteredMovies.map((movie) => (
+          {data.data?.map((movie) => (
             <TableRow key={movie.id} className="hover:bg-gray-50">
               <TableCell>
                 <div className="relative h-12 w-8 overflow-hidden rounded">
@@ -213,7 +208,7 @@ export default function MovieList({handleViewMovie, handleEditMovie, handleStopM
     </div>
     <div className="flex items-center justify-between mt-4">
       <div className="text-sm text-gray-500">
-        {filteredMovies.length > 0 ? `Hiển thị ${startIndex + 1}-${Math.min(endIndex, filteredMovies.length)} của ${filteredMovies.length} phim` : "Không có phim nào"}
+        {data.data?.length > 0 ? `Hiển thị ${startIndex + 1}-${Math.min(endIndex, data.data.length)} của ${data.total_count} phim` : "Không có phim nào"}
       </div>
       <div className="flex items-center space-x-2">
         <Button
