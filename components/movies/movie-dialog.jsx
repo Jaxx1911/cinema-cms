@@ -26,6 +26,23 @@ import { useGetMovieById, useCreateMovie } from "@/hooks/use-movie"
 // Mock data for tags and genres
 const movieTags = ["P", "K", "C13", "C16", "C18"]
 
+const initialFormData = {
+  title: "",
+  description: "",
+  duration: "",
+  directors: [],
+  casters: [],
+  releaseDate: "",
+  trailerUrl: "",
+  tag: "",
+  genres: [],
+  status: "new",
+  posterUrl: "",
+  bannerUrl: "",
+  poster: null,
+  banner: null,
+}
+
 export function MovieDialog({ isOpen, onClose, movie, mode = "view", onSave, setDialogMode, setIsMovieDialogOpen }) {
   const { data: genres, isLoading: genresLoading, error: genresError } = useGetGenres()
   const { data: movieDetails, isLoading: movieDetailsLoading, error: movieDetailsError } = useGetMovieById(movie?.id)
@@ -42,23 +59,7 @@ export function MovieDialog({ isOpen, onClose, movie, mode = "view", onSave, set
   const posterFileRef = useRef(null)
   const bannerFileRef = useRef(null)
 
-  const [formData, setFormData] = useState({
-    title: "",
-    description: "",
-    duration: "",
-    directors: [],
-    casters: [],
-    releaseDate: "",
-    trailerUrl: "",
-    tag: "",
-    genres: [],
-    status: "new",
-    posterUrl: "",
-    bannerUrl: "",
-    poster: null,
-    banner: null,
-  })
-
+  const [formData, setFormData] = useState(initialFormData)
   const [date, setDate] = useState()
   const [newDirector, setNewDirector] = useState("")
   const [newCaster, setNewCaster] = useState("")
@@ -66,8 +67,6 @@ export function MovieDialog({ isOpen, onClose, movie, mode = "view", onSave, set
   const [bannerPreview, setBannerPreview] = useState("")
   const [posterDimensions, setPosterDimensions] = useState({ width: 0, height: 0 })
   const [bannerDimensions, setBannerDimensions] = useState({ width: 0, height: 0 })
-
-  
 
   useEffect(() => {
     if (movie && (isViewMode || isEditMode)) {
@@ -108,8 +107,17 @@ export function MovieDialog({ isOpen, onClose, movie, mode = "view", onSave, set
         img.src = movie.large_poster_url
         setBannerPreview(movie.large_poster_url)
       }
+    } else if (!movie || mode === "add") {
+      setFormData(initialFormData)
+      setDate(null)
+      setPosterPreview("")
+      setBannerPreview("")
+      setPosterDimensions({ width: 0, height: 0 })
+      setBannerDimensions({ width: 0, height: 0 })
+      setNewDirector("")
+      setNewCaster("")
     }
-  }, [movie, isViewMode, isEditMode, movieDetails])
+  }, [movie, isViewMode, isEditMode, movieDetails, mode, isOpen])
 
   const handleChange = (e) => {
     const { name, value } = e.target
@@ -228,10 +236,22 @@ export function MovieDialog({ isOpen, onClose, movie, mode = "view", onSave, set
     onClose()
   }
 
+  const handleClose = () => {
+    setFormData(initialFormData)
+    setDate(null)
+    setPosterPreview("")
+    setBannerPreview("")
+    setPosterDimensions({ width: 0, height: 0 })
+    setBannerDimensions({ width: 0, height: 0 })
+    setNewDirector("")
+    setNewCaster("")
+    onClose()
+  }
+
   const dialogTitle = isAddMode ? "Thêm phim mới" : isEditMode ? "Chỉnh sửa phim" : "Chi tiết phim"
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose} >
+    <Dialog open={isOpen} onOpenChange={handleClose} >
       <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto scrollbar-none">
         <DialogHeader>
           <DialogTitle className="text-xl">{dialogTitle}</DialogTitle>
@@ -348,6 +368,9 @@ export function MovieDialog({ isOpen, onClose, movie, mode = "view", onSave, set
                     disabled={isViewMode}
                     required
                     placeholder="Nhập tên phim"
+                    style={{
+                      opacity: 1,
+                    }}
                   />
                 </div>
 
@@ -364,6 +387,9 @@ export function MovieDialog({ isOpen, onClose, movie, mode = "view", onSave, set
                     disabled={isViewMode}
                     required
                     placeholder="Nhập thời lượng phim"
+                    style={{
+                      opacity: 1,
+                    }}
                   />
                 </div>
 
@@ -377,6 +403,9 @@ export function MovieDialog({ isOpen, onClose, movie, mode = "view", onSave, set
                         variant="outline"
                         className={cn("w-full justify-start text-left font-normal", !date && "text-muted-foreground")}
                         disabled={isViewMode}
+                        style={{
+                          opacity: 1,
+                        }}
                       >
                         <CalendarIcon className="mr-2 h-4 w-4" />
                         {date ? format(date, "dd/MM/yyyy", { locale: vi }) : "Chọn ngày"}
@@ -399,6 +428,9 @@ export function MovieDialog({ isOpen, onClose, movie, mode = "view", onSave, set
                     onChange={handleChange}
                     disabled={isViewMode}
                     placeholder="Nhập URL trailer (YouTube, Vimeo...)"
+                    style={{
+                      opacity: 1,
+                    }}
                   />
                 </div>
 
@@ -411,8 +443,13 @@ export function MovieDialog({ isOpen, onClose, movie, mode = "view", onSave, set
                       value={formData.tag}
                       onValueChange={(value) => handleSelectChange("tag", value)}
                       disabled={isViewMode}
+                      style={{
+                        opacity: 1,
+                      }}
                     >
-                      <SelectTrigger id="tag">
+                      <SelectTrigger id="tag" style={{
+                        opacity: 1,
+                      }}>
                         <SelectValue placeholder="Chọn tag" />
                       </SelectTrigger>
                       <SelectContent>
@@ -432,8 +469,13 @@ export function MovieDialog({ isOpen, onClose, movie, mode = "view", onSave, set
                       value={formData.status}
                       onValueChange={(value) => handleSelectChange("status", value)}
                       disabled={isViewMode}
+                      style={{
+                        opacity: 1,
+                      }}
                     >
-                      <SelectTrigger id="status">
+                      <SelectTrigger id="status" style={{
+                        opacity: 1,
+                      }}>
                         <SelectValue placeholder="Chọn trạng thái" />
                       </SelectTrigger>
                       <SelectContent>
@@ -485,6 +527,9 @@ export function MovieDialog({ isOpen, onClose, movie, mode = "view", onSave, set
                 disabled={isViewMode}
                 rows={3}
                 placeholder="Nhập mô tả phim"
+                style={{
+                  opacity: 1,
+                }}
               />
             </div>
             <div className="space-y-2">
@@ -550,7 +595,7 @@ export function MovieDialog({ isOpen, onClose, movie, mode = "view", onSave, set
 
           {!isViewMode && (
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={onClose}>
+              <Button type="button" variant="outline" onClick={handleClose}>
                 Hủy
               </Button>
               <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
@@ -567,7 +612,7 @@ export function MovieDialog({ isOpen, onClose, movie, mode = "view", onSave, set
                 className="border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
                 onClick={() => {
                   // Switch to edit mode
-                  onClose()
+                  handleClose()
                   // Small delay to ensure dialog closes properly before reopening in edit mode
                   setTimeout(() => {
                     setDialogMode("edit")
@@ -578,7 +623,7 @@ export function MovieDialog({ isOpen, onClose, movie, mode = "view", onSave, set
                 <Edit className="mr-2 h-4 w-4" />
                 Chỉnh sửa
               </Button>
-              <Button type="button" onClick={onClose}>
+              <Button type="button" onClick={handleClose} className="bg-blue-600 hover:bg-blue-700 text-white">
                 Đóng
               </Button>
             </DialogFooter>

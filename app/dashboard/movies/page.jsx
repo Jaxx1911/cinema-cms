@@ -42,7 +42,7 @@ export default function MoviesPage() {
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearchTerm(searchTerm)
-    }, 300)
+    }, 1000)
 
     return () => clearTimeout(timer)
   }, [searchTerm])
