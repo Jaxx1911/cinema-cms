@@ -29,7 +29,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useGetCinemaById } from "@/hooks/use-cinema";
 
 export function CinemaDialog({
   isOpen,
@@ -41,8 +40,9 @@ export function CinemaDialog({
   const isViewMode = mode === "view";
   const isAddMode = mode === "add";
   const isEditMode = mode === "edit";
-
-  const [formData, setFormData] = useState({
+  
+    const [formData, setFormData] = useState({
+    id: "",
     name: "",
     address: "",
     opening_hours: "",
@@ -56,32 +56,41 @@ export function CinemaDialog({
   };
 
   const handleStatusChange = (value) => {
-    setFormData((prev) => ({ ...prev, is_active: value === "active" }));
+    setFormData((prev) => ({
+      ...prev,
+      is_active: value === 'true' || value === true ? true : false,
+    }));
   };
+  
 
   const resetForm = () => {
     setFormData({
+      id: "",
       name: "",
       address: "",
       opening_hours: "",
+      closing_hours: "",
       phone: "",
       is_active: true,
     });
   };
 
   useEffect(() => {
-    if (isAddMode) {
-      resetForm();
-    } else if (cinema && isViewMode) {
+    if (cinema && isEditMode) {
       setFormData({
+        id: cinema.id || "",
         name: cinema.name || "",
         address: cinema.address || "",
         opening_hours: cinema.opening_hours || "",
+        closing_hours: cinema.closing_hours || "",
         phone: cinema.phone || "",
-        is_active: cinema.is_active,
+        is_active: cinema.is_active === "true" ? true : false,
       });
+    } else if (isAddMode) {
+      resetForm();
     }
-  }, [cinema, isViewMode, isAddMode]);
+  }, [cinema, isEditMode, isAddMode]);
+  
 
   const handleClose = () => {
     if (isAddMode) {
@@ -92,11 +101,19 @@ export function CinemaDialog({
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (isAddMode && (!formData.name || !formData.address)) {
+      alert("Vui lòng nhập đầy đủ tên và địa chỉ rạp!");
+      return;
+    }
     onSave(formData);
     onClose();
   };
 
-  const dialogTitle = isAddMode ? "Thêm rạp mới" : "Chi tiết rạp";
+  const dialogTitle = isAddMode
+    ? "Thêm rạp mới"
+    : isEditMode
+    ? "Chỉnh sửa rạp"
+    : "Chi tiết rạp";
 
   if (isAddMode) {
     return (
@@ -111,18 +128,34 @@ export function CinemaDialog({
 
           <form onSubmit={handleSubmit}>
             <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">Tên rạp</Label>
-                <Input
-                  id="name"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleChange}
-                  required
-                  placeholder="Nhập tên rạp"
-                />
+              <div className="grid grid-cols-4 gap-4">
+                <div className="space-y-2 col-span-3">
+                  <Label htmlFor="name">Tên rạp</Label>
+                  <Input
+                    id="name"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleChange}
+                    required
+                    placeholder="Nhập tên rạp"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="status">Trạng thái</Label>
+                  <Select
+                    value={formData.is_active ? "true" : "false"}
+                    onValueChange={handleStatusChange}
+                  >
+                    <SelectTrigger id="status">
+                      <SelectValue placeholder="Chọn trạng thái" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="true">Hoạt động</SelectItem>
+                      <SelectItem value="false">Dừng hoạt động</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
-
               <div className="space-y-2">
                 <Label htmlFor="address">Địa chỉ</Label>
                 <Input
@@ -134,45 +167,33 @@ export function CinemaDialog({
                   placeholder="Nhập địa chỉ rạp"
                 />
               </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="opening_hours">Giờ mở cửa</Label>
-                <Input
-                  id="opening_hours"
-                  name="opening_hours"
-                  value={formData.opening_hours}
-                  onChange={handleChange}
-                  required
-                  placeholder="Nhập giờ mở cửa"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="phone">Số điện thoại</Label>
-                <Input
-                  id="phone"
-                  name="phone"
-                  value={formData.phone}
-                  onChange={handleChange}
-                  required
-                  placeholder="Nhập số điện thoại"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="status">Trạng thái</Label>
-                <Select
-                  value={formData.is_active ? "active" : "maintenance"}
-                  onValueChange={handleStatusChange}
-                >
-                  <SelectTrigger id="status">
-                    <SelectValue placeholder="Chọn trạng thái" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="active">Hoạt động</SelectItem>
-                    <SelectItem value="maintenance">Bảo trì</SelectItem>
-                  </SelectContent>
-                </Select>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="phone">Giờ hoạt động</Label>
+                    <Input
+                      id="opening_hours"
+                      name="opening_hours"
+                      value={formData.opening_hours}
+                      onChange={handleChange}
+                      required
+                      placeholder="Nhập giờ hoạt động"
+                    />
+                  </div>
+                </div>
+                <div className="grid gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="phone">Số điện thoại</Label>
+                    <Input
+                      id="phone"
+                      name="phone"
+                      value={formData.phone}
+                      onChange={handleChange}
+                      required
+                      placeholder="Nhập số điện thoại"
+                    />
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -186,128 +207,113 @@ export function CinemaDialog({
         </DialogContent>
       </Dialog>
     );
-  } else if (isViewMode) {
+  } else if (isEditMode) {
     return (
       <Dialog open={isOpen} onOpenChange={onClose}>
         <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto scrollbar-none">
           <DialogHeader>
-            <div className="flex items-center justify-between pr-8 pt-2">
-              <DialogTitle className="text-2xl font-bold tracking-tight text-gray-900">
-                Thông tin rạp phim
-              </DialogTitle>
-              <Button
-                variant="outline"
-                size="sm"
-                className="border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
-                onClick={() => {
-                  // Switch to edit mode
-                  onClose();
-                  // Small delay to ensure dialog closes properly before reopening in edit mode
-                  setTimeout(() => {
-                    setDialogMode("edit");
-                    setIsMovieDialogOpen(true);
-                  }, 100);
-                }}
-              >
-                <Edit className="mr-2 h-4 w-4" />
-                Chỉnh sửa rạp phim
-              </Button>
-            </div>
+            <DialogTitle className="text-2xl font-bold tracking-tight text-gray-900">
+              Chỉnh sửa rạp phim
+            </DialogTitle>
           </DialogHeader>
 
           <div className="space-y-6">
             <Card className="border-0 shadow-sm">
               <CardContent>
-                <dl className="grid grid-cols-2 gap-4">
-                  <div className="border rounded-lg p-4">
-                    <dt className="text-sm font-medium text-gray-500">
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    onSave(formData);
+                    onClose();
+                  }}
+                  className="grid grid-cols-2 gap-4"
+                >
+                  <div className="rounded-lg p-4">
+                    <label className="text-sm font-medium text-gray-500">
                       Cinema Name
-                    </dt>
-                    <dd className="text-lg text-gray-900">{cinema?.name}</dd>
-                  </div>
-                  <div className="border rounded-lg p-4">
-                    <dt className="text-sm font-medium text-gray-500">
-                      Trạng thái
-                    </dt>
-                    <dd>
-                      <div
-                        className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${
-                          cinema?.is_active
-                            ? "bg-green-100 text-green-800"
-                            : "bg-yellow-100 text-yellow-800"
-                        }`}
-                      >
-                        {cinema?.is_active ? "Hoạt động" : "Bảo trì"}
-                      </div>
-                    </dd>
-                  </div>
-                  <div className="col-span-2 border rounded-lg p-4">
-                    <dt className="text-sm font-medium text-gray-500">
-                      Địa chỉ
-                    </dt>
-                    <div className="flex items-center gap-2">
-                      <MapPin className="h-5 w-5 text-muted-foreground" />
-                      <dd className="text-lg text-gray-900">
-                        {cinema?.address}
-                      </dd>
-                    </div>
+                    </label>
+                    <input
+                      type="text"
+                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+                      value={formData.name}
+                      onChange={(e) =>
+                        setFormData({ ...formData, name: e.target.value })
+                      }
+                    />
                   </div>
 
-                  <div className="border rounded-lg p-4">
-                    <dt className="text-sm font-medium text-gray-500">
+                  <div className="rounded-lg p-4">
+                    <label className="text-sm font-medium text-gray-500">
+                      Trạng thái
+                    </label>
+                    <select
+                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+                      value={formData.is_active ? true : false}
+                      onChange={e => {
+                        setFormData({ ...formData, is_active: e.target.value === 'true' ? true : false });
+                        console.log("onChange is_active:", e.target.value, formData);
+                      }}
+                    >
+                      <option value="true">Hoạt động</option>
+                      <option value="false">Dừng hoạt động</option>
+                    </select>
+                  </div>
+
+                  <div className="col-span-2 rounded-lg p-4">
+                    <label className="text-sm font-medium text-gray-500">
+                      Địa chỉ
+                    </label>
+                    <input
+                      type="text"
+                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+                      value={formData.address}
+                      onChange={(e) =>
+                        setFormData({ ...formData, address: e.target.value })
+                      }
+                    />
+                  </div>
+
+                  <div className="rounded-lg p-4">
+                    <label className="text-sm font-medium text-gray-500">
                       Số điện thoại
-                    </dt>
-                    <div className="flex items-center gap-2">
-                      <Phone className="h-5 w-5 text-muted-foreground" />
-                      <dd className="text-lg text-gray-900">{cinema?.phone}</dd>
-                    </div>
+                    </label>
+                    <input
+                      type="text"
+                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+                      value={formData.phone}
+                      onChange={(e) =>
+                        setFormData({ ...formData, phone: e.target.value })
+                      }
+                    />
                   </div>
-                  <div className="border rounded-lg p-4">
-                    <dt className="text-sm font-medium text-gray-500">
+
+                  <div className="rounded-lg p-4">
+                    <label className="text-sm font-medium text-gray-500">
                       Giờ hoạt động
-                    </dt>
-                    <div className="flex items-center gap-2">
-                      <Clock className="h-5 w-5 text-muted-foreground" />
-                      <dd className="text-lg text-gray-900">
-                        {cinema?.opening_hours}
-                      </dd>
-                    </div>
+                    </label>
+                    <input
+                      type="text"
+                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+                      value={formData.opening_hours}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          opening_hours: e.target.value,
+                        })
+                      }
+                    />
                   </div>
-                </dl>
+
+                  <div className="col-span-2 flex justify-end gap-x-2 mt-4">
+                    <Button type="button" variant="outline" onClick={onClose}>
+                      Hủy
+                    </Button>
+                    <Button type="submit">Lưu thay đổi</Button>
+                  </div>
+                </form>
               </CardContent>
             </Card>
-
-            <Tabs defaultValue="rooms" className="space-y-4">
-              <TabsContent value="rooms" className="space-y-4">
-                <div className="rounded-lg border bg-white p-4 shadow-sm">
-                  <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-lg font-medium text-gray-900">
-                      Danh sách phòng chiếu
-                    </h3>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
-                      onClick={() => onSave({ ...cinema, mode: "edit" })}
-                    >
-                      <Edit className="mr-2 h-4 w-4" />
-                      Chỉnh sửa 
-                    </Button>
-                  </div>
-                  <RoomsTable
-                    rooms={cinema?.rooms || []}
-                    cinemaId={cinema?.id}
-                  />
-                </div>
-              </TabsContent>
-            </Tabs>
           </div>
-
-          <DialogFooter className="mt-4">
-            <Button type="button" onClick={onClose}>
-              Đóng
-            </Button>
-          </DialogFooter>
         </DialogContent>
       </Dialog>
     );

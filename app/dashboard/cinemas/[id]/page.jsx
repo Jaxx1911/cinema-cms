@@ -2,7 +2,16 @@
 
 import { use } from "react";
 import Link from "next/link";
-import { ArrowLeft, Edit, Plus, MapPin, Phone, Clock } from "lucide-react";
+import {
+  ArrowLeft,
+  Edit,
+  Plus,
+  MapPin,
+  Phone,
+  Clock,
+  CheckCircle2,
+  XCircle,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { RoomsTable } from "@/components/cinemas/rooms-table";
 import { useGetCinemas } from "@/hooks/use-cinema";
@@ -16,14 +25,118 @@ import {
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useParams } from "next/navigation";
+import { useRouter } from "next/navigation";
+import { useUpdateCinema } from "@/hooks/use-cinema";
+import { useState } from "react";
+import { CinemaDialog } from "@/components/cinemas/cinema-dialog";
+import axios from "axios";
+import { toast } from "@/components/ui/use-toast";
 
-export default function CinemaDetailsPage(){
+export default function CinemaDetailsPage() {
   const params = useParams();
-  const { data: cinema , isLoading, error } = useGetCinemaById(params.id);
+  const { data: cinema, isLoading, error } = useGetCinemaById(params.id);
+  const [isCinemaDialogOpen, setIsCinemaDialogOpen] = useState(false);
+  const [selectedCinema, setSelectedCinema] = useState(null);
+  const [dialogMode, setDialogMode] = useState("view");
+  const {
+    mutate: updateCinema,
+    data: updateData,
+    isLoading: updateLoading,
+    error: updateError,
+  } = useUpdateCinema();
+  const [cinemaData, setCinemaData] = useState(null);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [cinemas, setCinemas] = useState();
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [formData, setFormData] = useState({
+    id: "",
+    name: "",
+    address: "",
+    phone: "",
+    opening_hours: "",
+    is_active: true,
+  });
+
+  const handleSaveCinema = async (cinema) => {
+    if (!cinema || !cinema.name || !cinema.address) {
+      console.error("Dữ liệu rạp phim không hợp lệ:", cinema);
+      toast({
+        title: "Lỗi",
+        description: "Vui lòng điền đầy đủ thông tin bắt buộc.",
+        variant: "destructive",
+        icon: <XCircle className="h-5 w-5 text-red-500" />,
+      });
+      return;
+    }
+
+    try {
+      let response;
+
+      if (dialogMode === "add") {
+        response = await axios.post("http://localhost:8000/api/cinema", cinema);
+        setCinemas([...cinemas, response.data]);
+
+        toast({
+          title: "Thành công",
+          description: "Đã thêm rạp phim mới.",
+          variant: "default",
+          icon: <CheckCircle2 className="h-5 w-5 text-green-500" />,
+        });
+      } else if (dialogMode === "edit") {
+        await axios.put(
+          `http://localhost:8000/api/cinema/${cinema.id}`,
+          cinema
+        );
+        setCinemas(cinemas.map((c) => (c.id === cinema.id ? cinema : c)));
+        toast({
+          title: "Thành công",
+          description: "Cập nhật rạp phim thành công.",
+          variant: "default",
+          icon: <CheckCircle2 className="h-5 w-5 text-green-500" />,
+        });
+      }
+
+      setIsDialogOpen(false); // Đóng form
+      setFormData({
+        // Reset form
+        id: "",
+        name: "",
+        address: "",
+        phone: "",
+        opening_hours: "",
+        is_active: true,
+      });
+    } catch (error) {
+      console.error("Lỗi khi lưu rạp:", error);
+      toast({
+        title: "Lỗi",
+        description:
+          error.response?.data?.message ||
+          error.message ||
+          "Có lỗi xảy ra khi lưu.",
+        variant: "destructive",
+        icon: <XCircle className="h-5 w-5 text-red-500" />,
+      });
+    }
+  };
+
+  const handleEditCinema = (cinema) => {
+    setFormData({
+      id: cinema.id, // rất quan trọng!
+      name: cinema.name,
+      address: cinema.address,
+      phone: cinema.phone,
+      opening_hours: cinema.opening_hours,
+      is_active: cinema.is_active,
+    });
+    setSelectedCinema(cinema);
+    setDialogMode("edit");
+    setIsCinemaDialogOpen(true);
+  };
   if (isLoading) {
     return <div>Loading...</div>;
   }
-  
+
   if (error) {
     return <div>Error: {error.message}</div>;
   }
@@ -45,20 +158,16 @@ export default function CinemaDetailsPage(){
               <ArrowLeft className="h-4 w-4" />
             </Button>
           </Link>
-          <h2 className="text-2xl font-bold tracking-tight text-gray-900">
-            {cinema.name}
-          </h2>
         </div>
         <div className="flex gap-2">
-          <Link href={`/dashboard/cinemas/${cinema.id}/edit`}>
-            <Button
-              variant="outline"
-              className="border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
-            >
-              <Edit className="mr-2 h-4 w-4" />
-              Chỉnh sửa
-            </Button>
-          </Link>
+          <Button
+            variant="outline"
+            className="border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
+            onClick={() => handleEditCinema(cinema)}
+          >
+            <Edit className="mr-2 h-4 w-4" />
+            Chỉnh sửa
+          </Button>
         </div>
       </div>
 
@@ -89,7 +198,7 @@ export default function CinemaDetailsPage(){
                             : "bg-yellow-100 text-yellow-800"
                         }`}
                       >
-                        {cinema?.is_active ? "Hoạt động" : "Bảo trì"}
+                        {cinema?.is_active ? "Hoạt động" : "Dừng hoạt động"}
                       </div>
                     </dd>
                   </div>
@@ -137,13 +246,11 @@ export default function CinemaDetailsPage(){
                       Danh sách phòng chiếu
                     </h3>
                     <Button
-                      variant="outline"
-                      size="sm"
-                      className="border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
-                      onClick={() => onSave({ ...cinema, mode: "edit" })}
+                      className="bg-blue-600 hover:bg-blue-700"
+                      onClick={() => onSave({ ...cinema, mode: "add" })}
                     >
-                      <Edit className="mr-2 h-4 w-4" />
-                      Chỉnh sửa
+                      <Plus className="mr-2 h-4 w-4" />
+                      Thêm phòng chiếu
                     </Button>
                   </div>
                   <RoomsTable
@@ -155,10 +262,16 @@ export default function CinemaDetailsPage(){
             </Tabs>
           </div>
         </Card>
-
       </div>
-
-
+      <CinemaDialog
+        isOpen={isCinemaDialogOpen}
+        onClose={() => setIsCinemaDialogOpen(false)}
+        cinema={selectedCinema}
+        mode={dialogMode}
+        onSave={handleSaveCinema}
+        setDialogMode={setDialogMode}
+        setIsCinemaDialogOpen={setIsCinemaDialogOpen}
+      />
     </div>
   );
 }

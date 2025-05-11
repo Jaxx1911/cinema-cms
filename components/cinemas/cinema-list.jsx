@@ -15,7 +15,10 @@ import {
 import { useGetCinemas } from "@/hooks/use-cinema";
 import { useRouter } from "next/navigation";
 
-export default function CinemaList({handleViewCinema, handleEditCinema, handleDeleteClick}) {
+export default function CinemaList({
+  handleViewCinema,
+  handleDeleteClick,
+}) {
   const { data: cinemas, isLoading, error } = useGetCinemas();
   const [searchTerm, setSearchTerm] = useState("");
   const router = useRouter();
@@ -32,59 +35,52 @@ export default function CinemaList({handleViewCinema, handleEditCinema, handleDe
           onChange={(e) => setSearchTerm(e.target.value)}
         />
       </div>
-      
-      
 
       <div className="rounded-md border">
         <Table>
           <TableHeader className="bg-gray-50">
             <TableRow>
               <TableHead className="w-1/8">Tên rạp</TableHead>
-              <TableHead className="w-1/3">Địa chỉ</TableHead>
+              <TableHead className="w-1/2">Địa chỉ</TableHead>
               <TableHead className="w-1/8">Giờ mở cửa</TableHead>
               <TableHead className="w-1/8">Số điện thoại</TableHead>
-              <TableHead className="w-flex">Trạng thái</TableHead>
-              <TableHead className="text-center">Thao tác</TableHead>
+              <TableHead className="w-1/8">Trạng thái</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {cinemas.filter((cinema) => cinema.name.toLowerCase().includes(searchTerm.toLowerCase())).map((cinema) => (
-              <TableRow key={cinema.id} className="hover:bg-gray-50">
-                <TableCell className="font-medium text-blue-600">{cinema.name}</TableCell>
-                <TableCell>{cinema.address}</TableCell>
-                <TableCell>{cinema.opening_hours}</TableCell>
-                <TableCell>{cinema.phone}</TableCell>
-                <TableCell>
-                  <div className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${
-                    cinema.is_active ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800"
-                  }`}>
-                    {cinema.is_active ? "Hoạt động" : "Bảo trì"}
-                  </div>
-                </TableCell>
-                <TableCell className="text-center">
-                  <div className="flex justify-center gap-2">
+            {cinemas
+              .filter((cinema) =>
+                cinema.name.toLowerCase().includes(searchTerm.toLowerCase())
+              )
+              .map((cinema) => (
+                <TableRow key={cinema.id} className="hover:bg-gray-50">
                     <Button
-                      variant="ghost"
-                      size="icon"
-                      className="text-gray-500 hover:text-blue-600"
-                      onClick={() => router.push(`/dashboard/cinemas/${cinema.id}`)}
+                        variant="ghost"
+                        size="icon"
+                        className="text-left text-gray-500 w-full justify-start pl-4 hover:text-blue-600 hover:bg-gray-50"
+                        onClick={() =>
+                        router.push(`/dashboard/cinemas/${cinema.id}`)
+                        }
                     >
-                      <Eye className="h-4 w-4" />
-                      <span className="sr-only">Xem chi tiết</span>
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleDeleteClick(cinema.id)}
-                      className="text-gray-500 hover:text-red-600"
+                    {cinema.name}
+                  </Button>
+                  <TableCell>{cinema.address}</TableCell>
+                  <TableCell>{cinema.opening_hours}</TableCell>
+                  <TableCell>{cinema.phone}</TableCell>
+                  <TableCell>
+                    <div
+                      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                        cinema.is_active
+                          ? "bg-green-100 text-green-800"
+                          : "bg-yellow-100 text-yellow-800"
+                      }`}
                     >
-                      <Trash2 className="h-4 w-4" />
-                      <span className="sr-only">Xóa</span>
-                    </Button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
+                      {cinema.is_active ? "Hoạt động" : "Dừng hoạt động"}
+                    </div>
+                  </TableCell>
+                 
+                </TableRow>
+              ))}
           </TableBody>
         </Table>
       </div>

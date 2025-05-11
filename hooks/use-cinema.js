@@ -1,6 +1,6 @@
 "use client"
-import { useQuery } from "@tanstack/react-query"
-import { getCinemas, getCinemaById } from "@/services/cinema-service"
+import { useQuery, useMutation } from "@tanstack/react-query"
+import { getCinemas, getCinemaById, updateCinema, deleteCinema } from "@/services/cinema-service"
 export function useGetCinemas () {
   const { data, isLoading, error } = useQuery({
     queryKey: ["cinema"],
@@ -26,4 +26,15 @@ export const useGetCinemaById = (id) => {
       error: error?.message || null 
     }
   }
+  export const useUpdateCinema = () => {
+    const { data, isLoading, error, mutate } = useMutation({
+      mutationFn: (id, cinema) => updateCinema(id, cinema),
+    })
   
+    return {
+      data: data?.body || null,
+      isLoading,
+      error: error?.message || null,
+      mutate: mutate,
+    }
+  }

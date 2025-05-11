@@ -13,6 +13,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { RoomDialog } from "./room-dialog"
+import { toast } from "@/components/ui/use-toast"
 
 export function RoomsTable({ rooms, cinemaId }) {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
@@ -52,9 +53,72 @@ export function RoomsTable({ rooms, cinemaId }) {
   }
 
   const handleSaveRoom = (roomData) => {
-    // In a real app, you would save the room data here
-    console.log("Saving room:", roomData)
-    setIsRoomDialogOpen(false)
+    if (dialogMode === "add") {
+      const formData = new FormData()
+      formData.append("name", roomData.name)
+      formData.append("capacity", roomData.capacity)
+      formData.append("type", roomData.type)
+      formData.append("row_count", roomData.rows)
+      formData.append("column_count", roomData.columns)
+      formData.append("is_active", roomData.is_active)
+      formData.append("cinema_id", cinemaId)
+
+      // Gọi API thêm phòng chiếu mới
+      fetch("/api/rooms", {
+        method: "POST",
+        body: formData,
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          toast({
+            title: "Thành công",
+            description: "Thêm phòng chiếu mới thành công",
+            variant: "default",
+          })
+          setIsRoomDialogOpen(false)
+          // Cập nhật lại danh sách phòng chiếu
+          window.location.reload()
+        })
+        .catch((error) => {
+          toast({
+            title: "Lỗi",
+            description: error.message || "Có lỗi xảy ra khi thêm phòng chiếu",
+            variant: "destructive",
+          })
+        })
+    } else if (dialogMode === "edit") {
+      const formData = new FormData()
+      formData.append("name", roomData.name)
+      formData.append("capacity", roomData.capacity)
+      formData.append("type", roomData.type)
+      formData.append("row_count", roomData.rows)
+      formData.append("column_count", roomData.columns)
+      formData.append("is_active", roomData.is_active)
+
+      // Gọi API cập nhật phòng chiếu
+      fetch(`/api/rooms/${roomData.id}`, {
+        method: "PUT",
+        body: formData,
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          toast({
+            title: "Thành công",
+            description: "Cập nhật phòng chiếu thành công",
+            variant: "default",
+          })
+          setIsRoomDialogOpen(false)
+          // Cập nhật lại danh sách phòng chiếu
+          window.location.reload()
+        })
+        .catch((error) => {
+          toast({
+            title: "Lỗi",
+            description: error.message || "Có lỗi xảy ra khi cập nhật phòng chiếu",
+            variant: "destructive",
+          })
+        })
+    }
   }
 
   return (
@@ -63,13 +127,13 @@ export function RoomsTable({ rooms, cinemaId }) {
         <Table>
           <TableHeader className="bg-gray-50">
             <TableRow>
-              <TableHead>ID</TableHead>
-              <TableHead>Tên phòng</TableHead>
-              <TableHead>Sức chứa</TableHead>
-              <TableHead>Loại phòng</TableHead>
-              <TableHead>Số hàng</TableHead>
-              <TableHead>Số cột</TableHead>
-              <TableHead>Trạng thái</TableHead>
+              <TableHead className="text-center">ID</TableHead>
+              <TableHead className="text-center">Tên phòng</TableHead>
+              <TableHead className="text-center">Sức chứa</TableHead>
+              <TableHead className="text-center">Loại phòng</TableHead>
+              <TableHead className="text-center">Số hàng</TableHead>
+              <TableHead className="text-center">Số cột</TableHead>
+              <TableHead className="text-center">Trạng thái</TableHead>
               <TableHead className="text-center">Thao tác</TableHead>
             </TableRow>
           </TableHeader>
@@ -81,12 +145,12 @@ export function RoomsTable({ rooms, cinemaId }) {
                 </TableCell>
               </TableRow>
             ) : (
-              rooms.map((room) => (
+              rooms.map((room, index) => (
                 <TableRow key={room.id} className="hover:bg-gray-50">
-                  <TableCell className="font-medium">{room.id}</TableCell>
-                  <TableCell className="font-medium text-blue-600">{room.name}</TableCell>
-                  <TableCell>{room.capacity} ghế</TableCell>
-                  <TableCell>
+                  <TableCell className="font-medium text-center" title={`Room ID: ${room.id}`}>{index + 1}</TableCell>
+                  <TableCell className="font-medium text-blue-600 truncate max-w-[200px] text-center">{room.name}</TableCell>
+                  <TableCell className="text-center">{room.capacity} ghế</TableCell>
+                  <TableCell className="text-center">
                     {room.type === "2d"
                       ? "2D"
                       : room.type === "3d"
@@ -97,19 +161,19 @@ export function RoomsTable({ rooms, cinemaId }) {
                             ? "IMAX"
                             : room.type}
                   </TableCell>
-                  <TableCell>{room.rows}</TableCell>
-                  <TableCell>{room.columns}</TableCell>
-                  <TableCell>
+                  <TableCell className="text-center">{room.row_count}</TableCell>
+                  <TableCell className="text-center">{room.column_count}</TableCell>
+                  <TableCell className="text-center">
                     <div
                       className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${
-                        room.status === "active" ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800"
+                        room.is_active ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800"
                       }`}
                     >
-                      {room.status === "active" ? "Hoạt động" : "Bảo trì"}
+                      {room.is_active ? " Hoạt động" : "Dừng hoạt động"}
                     </div>
                   </TableCell>
-                  <TableCell>
-                    <div className="flex justify-end gap-2">
+                  <TableCell className="text-center">
+                    <div className="flex justify-center gap-2">
                       <Button
                         variant="ghost"
                         size="icon"
@@ -171,6 +235,7 @@ export function RoomsTable({ rooms, cinemaId }) {
         room={selectedRoom}
         mode={dialogMode}
         onSave={handleSaveRoom}
+        cinemaId={cinemaId}
       />
     </>
   )

@@ -3,6 +3,7 @@
 import { useState } from "react"
 import Link from "next/link"
 import { Plus, Search } from "lucide-react"
+import axios from "axios";
 import CinemaList from "@/components/cinemas/cinema-list"
 import { CinemaDialog } from "@/components/cinemas/cinema-dialog"
 import { Button } from "@/components/ui/button"
@@ -17,6 +18,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { useRouter } from "next/navigation"
+import { toast } from "@/components/ui/use-toast"
 
 export default function CinemasPage() {
   const [searchTerm, setSearchTerm] = useState("")
@@ -24,13 +26,10 @@ export default function CinemasPage() {
   const [selectedCinema, setSelectedCinema] = useState(null)
   const [cinemaToDelete, setCinemaToDelete] = useState(null)
   const [dialogMode, setDialogMode] = useState("view")
-  const [cinemas, setCinemas] = useState()
+  const [cinemas, setCinemas] = useState([]);
+
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const router = useRouter()
-
-  const filteredCinemas = cinemas?.filter((cinema) => 
-    cinema.name.toLowerCase().includes(searchTerm.toLowerCase())
-  )
 
   const handleAddCinema = () => {
     setSelectedCinema(null)
@@ -50,23 +49,35 @@ export default function CinemasPage() {
     setCinemaToDelete(null)
   }
 
-  const handleSaveCinema = (cinemaData) => {
-    console.log(cinemaData)
-    if (dialogMode === "add") {
-      const newCinema = {
-        ...cinemaData,
+  const handleSaveCinema = async (cinema) => {
+    try {
+      if (dialogMode === "add") {
+        const response = await axios.post("http://localhost:8000/api/cinema", cinema);
+        setCinemas([...cinemas, response.data]); // cập nhật UI bằng dữ liệu backend trả về
+      } else if (dialogMode === "edit") {
+        try {
+          console.log(cinema)
+          await axios.put(`http://localhost:8000/api/cinema/${cinema.id}`, cinema);
+          setCinemas(
+            cinemas.map((c) =>
+              c.id === cinema.id ? cinema : c
+            )
+          );
+        } catch (error) {
+          if (error.response) {
+            console.error("Response Error:", error.response);
+          } else if (error.request) {
+            console.error("Request Error:", error.request);
+          } else {
+            console.error("Error:", error.message);
+          }
+        }
+        
       }
-
-    } else if (dialogMode === "edit") {
-      setCinemas(
-        cinemas.map((cinema) =>
-          cinema.id === cinemaData.id
-            ? cinemaData
-            : cinema
-        )
-      )
+    } catch (error) {
+      console.error("Lỗi khi lưu rạp:", error);
     }
-  }
+  };
   
   return (
     <div className="space-y-5">

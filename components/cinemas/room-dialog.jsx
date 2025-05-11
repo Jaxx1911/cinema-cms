@@ -19,14 +19,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 export function RoomDialog({ isOpen, onClose, room, mode = "view", onSave }) {
   const isViewMode = mode === "view"
   const isAddMode = mode === "add"
+  const isEditMode = mode === "edit"
 
   const [formData, setFormData] = useState({
     name: "",
     capacity: "",
     type: "2d",
-    rows: "",
-    columns: "",
-    status: "active"
+    row_count: "",
+    column_count: "",
+    is_active: true
   })
 
   const handleChange = (e) => {
@@ -43,9 +44,9 @@ export function RoomDialog({ isOpen, onClose, room, mode = "view", onSave }) {
       name: "",
       capacity: "",
       type: "2d",
-      rows: "",
-      columns: "",
-      status: "active"
+      row_count: "",
+      column_count: "",
+      is_active: true
     })
   }
 
@@ -57,9 +58,9 @@ export function RoomDialog({ isOpen, onClose, room, mode = "view", onSave }) {
         name: room.name || "",
         capacity: room.capacity || "",
         type: room.type || "2d",
-        rows: room.rows || "",
-        columns: room.columns || "",
-        status: room.status || "active"
+        row_count: room.row_count || "",
+        column_count: room.column_count || "",
+        is_active: room.is_active 
       })
     }
   }, [room, isViewMode, isAddMode])
@@ -164,17 +165,17 @@ export function RoomDialog({ isOpen, onClose, room, mode = "view", onSave }) {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="status">Trạng thái</Label>
+                <Label htmlFor="is_active">Trạng thái</Label>
                 <Select
-                  value={formData.status}
+                  value={formData.is_active}
                   onValueChange={handleStatusChange}
                 >
-                  <SelectTrigger id="status">
+                  <SelectTrigger id="is_active">
                     <SelectValue placeholder="Chọn trạng thái" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="active">Hoạt động</SelectItem>
-                    <SelectItem value="maintenance">Bảo trì</SelectItem>
+                    <SelectItem value="true">Hoạt động</SelectItem>
+                    <SelectItem value="false">Dừng hoạt động</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -231,12 +232,12 @@ export function RoomDialog({ isOpen, onClose, room, mode = "view", onSave }) {
                   <dd>
                     <div
                       className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${
-                        room?.status === "active"
+                        room?.is_active
                           ? "bg-green-100 text-green-800"
                           : "bg-yellow-100 text-yellow-800"
                       }`}
                     >
-                      {room?.status === "active" ? "Hoạt động" : "Bảo trì"}
+                      {room?.is_active  ? "Hoạt động" : "Dừng hoạt động"}
                     </div>
                   </dd>
                 </div>
