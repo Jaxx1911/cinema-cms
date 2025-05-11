@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Plus, Search, CheckCircle2, XCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
@@ -16,6 +16,7 @@ import MovieList from "@/components/movies/movie-list"
 import { useCreateMovie, useUpdateMovie, useStopMovie, useResumeMovie } from "@/hooks/use-movie"
 import { format } from "date-fns"
 import { useToast } from "@/hooks/use-toast"
+import MovieFilter from "@/components/movies/movie-filter"
 
 export default function MoviesPage() {
   const { toast } = useToast()
@@ -23,7 +24,11 @@ export default function MoviesPage() {
   const { mutate: updateMovie, data: updateData, isLoading: updateLoading, error: updateError } = useUpdateMovie()
   const { mutate: stopMovie, data: stopData, isLoading: stopLoading, error: stopError } = useStopMovie()
   const { mutate: resumeMovie, data: resumeData, isLoading: resumeLoading, error: resumeError } = useResumeMovie()
-
+  const [searchTerm, setSearchTerm] = useState("")
+  const [statusFilter, setStatusFilter] = useState("all")
+  const [tagFilter, setTagFilter] = useState("all")
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("")
+  const searchInputRef = useRef(null)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [movieToDelete, setMovieToDelete] = useState(null)
   const [movies, setMovies] = useState()
@@ -32,6 +37,15 @@ export default function MoviesPage() {
   const [isMovieDialogOpen, setIsMovieDialogOpen] = useState(false)
   const [selectedMovie, setSelectedMovie] = useState(null)
   const [dialogMode, setDialogMode] = useState("view") // view, edit, add
+
+  // Debounce search term
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm)
+    }, 1000)
+
+    return () => clearTimeout(timer)
+  }, [searchTerm])
 
   const handleStopMovie = (id) => {
     setMovieToDelete(id)
@@ -202,7 +216,27 @@ export default function MoviesPage() {
       </div>
 
       <div className="rounded-lg border bg-white p-4 shadow-sm">
-        <MovieList handleViewMovie={handleViewMovie} handleEditMovie={handleEditMovie} handleStopMovie={handleStopMovie} handleResumeMovie={handleResumeMovie} setMovies={setMovies}/>
+        <MovieFilter
+          searchTerm={searchTerm}
+          setSearchTerm={setSearchTerm}
+          statusFilter={statusFilter}
+          setStatusFilter={setStatusFilter}
+          tagFilter={tagFilter}
+          setTagFilter={setTagFilter}
+          searchInputRef={searchInputRef}
+        />
+        <MovieList 
+          handleViewMovie={handleViewMovie} 
+          handleEditMovie={handleEditMovie} 
+          handleStopMovie={handleStopMovie} 
+          handleResumeMovie={handleResumeMovie} 
+          setMovies={setMovies}
+          searchTerm={searchTerm}
+          statusFilter={statusFilter}
+          tagFilter={tagFilter}
+          searchInputRef={searchInputRef}
+          debouncedSearchTerm={debouncedSearchTerm}
+        />
       </div>
 
       {/* Delete Confirmation Dialog */}

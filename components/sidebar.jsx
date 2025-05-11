@@ -12,6 +12,7 @@ import {
   Ticket,
   Settings,
   LogOut,
+  Popcorn,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
@@ -36,6 +37,11 @@ const navItems = [
     title: "Suất chiếu",
     href: "/dashboard/showtimes",
     icon: Calendar,
+  },
+  {
+    title: "Combo",
+    href: "/dashboard/combos",
+    icon: Popcorn,
   },
   {
     title: "Người dùng",
@@ -70,7 +76,7 @@ export function Sidebar() {
         </div>
         <div className="space-y-1">
           {navItems.map((item) => {
-            const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`)
+            const isActive = pathname === item.href || pathname.endsWith(`${item.href}/`)
             return (
               <Link key={item.href} href={item.href}>
                 <div
@@ -86,12 +92,6 @@ export function Sidebar() {
             )
           })}
         </div>
-      </div>
-      <div className="mt-auto border-t px-3 py-4">
-        <Button variant="ghost" className="w-full justify-start text-gray-600 hover:bg-gray-100 hover:text-gray-900">
-          <LogOut className="mr-2 h-5 w-5" />
-          Đăng xuất
-        </Button>
       </div>
     </>
   )
