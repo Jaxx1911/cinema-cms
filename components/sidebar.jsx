@@ -13,6 +13,7 @@ import {
   Settings,
   LogOut,
   Popcorn,
+  HandCoins,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
@@ -42,6 +43,11 @@ const navItems = [
     title: "Combo",
     href: "/dashboard/combos",
     icon: Popcorn,
+  },
+  {
+    title: "Phiếu giảm giá",
+    href: "/dashboard/discounts",
+    icon: HandCoins,
   },
   {
     title: "Người dùng",
