@@ -3,8 +3,8 @@
 import { useState, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Plus, Search } from 'lucide-react'
-import { toast } from 'sonner'
+import { Plus, Search, CheckCircle2, XCircle } from 'lucide-react'
+import { useToast } from '@/hooks/use-toast'
 import DiscountList from '@/components/discount/discount-list'
 import { DiscountDialog } from '@/components/discount/discount-dialog'
 import {
@@ -24,10 +24,12 @@ import {
 } from '@/hooks/use-discount'
 
 export default function DiscountsPage() {
+  const { toast } = useToast()
   const [selectedDiscount, setSelectedDiscount] = useState(null)
   const [dialogMode, setDialogMode] = useState('view') // view, edit, add
   const [searchTerm, setSearchTerm] = useState('')
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+  const [isDiscountDialogOpen, setIsDiscountDialogOpen] = useState(false)
   const searchInputRef = useRef(null)
 
   const { createDiscount, isLoading: isCreating } = useCreateDiscount()
@@ -37,16 +39,19 @@ export default function DiscountsPage() {
   const handleViewDiscount = (discount) => {
     setSelectedDiscount(discount)
     setDialogMode('view')
+    setIsDiscountDialogOpen(true)
   }
 
   const handleEditDiscount = (discount) => {
     setSelectedDiscount(discount)
     setDialogMode('edit')
+    setIsDiscountDialogOpen(true)
   }
 
   const handleAddDiscount = () => {
     setSelectedDiscount(null)
     setDialogMode('add')
+    setIsDiscountDialogOpen(true)
   }
 
   const handleDeleteDiscount = (discount) => {
@@ -54,33 +59,86 @@ export default function DiscountsPage() {
     setIsDeleteDialogOpen(true)
   }
 
-  const handleConfirmDelete = async () => {
+  const handleConfirmDelete = () => {
+    deleteDiscount(selectedDiscount.id, {
+      onSuccess: () => {
+        toast({
+          title: "Thành công",
+          description: "Xóa phiếu giảm giá thành công",
+          variant: "default",
+          icon: <CheckCircle2 className="h-5 w-5 text-green-500" />,
+        })
+        setIsDeleteDialogOpen(false)
+      },
+      onError: (error) => {
+        toast({
+          title: "Lỗi",
+          description: error.message || "Có lỗi xảy ra khi xóa phiếu giảm giá",
+          variant: "destructive",
+          icon: <XCircle className="h-5 w-5 text-red-500" />,
+        })
+      }
+    })
+  }
+
+  const handleSubmit = (formData) => {
+    console.log("formData in handleSubmit: ", formData)
     try {
-      await deleteDiscount(selectedDiscount._id)
-      toast.success('Xóa phiếu giảm giá thành công')
-      setIsDeleteDialogOpen(false)
+      if (dialogMode === 'add') {
+        createDiscount(formData, {
+          onSuccess: () => {
+            toast({
+              title: "Thành công",
+              description: "Thêm mới phiếu giảm giá thành công",
+              variant: "default",
+              icon: <CheckCircle2 className="h-5 w-5 text-green-500" />,
+            })
+            setIsDiscountDialogOpen(false)
+          },
+          onError: (error) => {
+            toast({
+              title: "Lỗi",
+              description: error.message || "Có lỗi xảy ra",
+              variant: "destructive",
+              icon: <XCircle className="h-5 w-5 text-red-500" />,
+            })
+          }
+        })
+      } else if (dialogMode === 'edit') {
+        updateDiscount({ id: selectedDiscount.id, data: formData }, {
+          onSuccess: () => {
+            toast({
+              title: "Thành công",
+              description: "Cập nhật phiếu giảm giá thành công",
+              variant: "default",
+              icon: <CheckCircle2 className="h-5 w-5 text-green-500" />,
+            })
+            setIsDiscountDialogOpen(false)
+          },
+          onError: (error) => {
+            toast({
+              title: "Lỗi",
+              description: error.message || "Có lỗi xảy ra",
+              variant: "destructive",
+              icon: <XCircle className="h-5 w-5 text-red-500" />,
+            })
+          }
+        })
+      }
     } catch (error) {
-      toast.error('Có lỗi xảy ra khi xóa phiếu giảm giá')
+      toast({
+        title: "Lỗi",
+        description: error.message || "Có lỗi xảy ra",
+        variant: "destructive",
+        icon: <XCircle className="h-5 w-5 text-red-500" />,
+      })
     }
   }
 
-  const handleSubmit = async (formData) => {
-    try {
-      if (dialogMode === 'add') {
-        await createDiscount(formData)
-        toast.success('Thêm phiếu giảm giá thành công')
-      } else if (dialogMode === 'edit') {
-        await updateDiscount({ id: selectedDiscount._id, data: formData })
-        toast.success('Cập nhật phiếu giảm giá thành công')
-      }
-      setSelectedDiscount(null)
-    } catch (error) {
-      toast.error(
-        dialogMode === 'add'
-          ? 'Có lỗi xảy ra khi thêm phiếu giảm giá'
-          : 'Có lỗi xảy ra khi cập nhật phiếu giảm giá'
-      )
-    }
+  const handleDialogClose = () => {
+    setIsDiscountDialogOpen(false)
+    setSelectedDiscount(null)
+    setDialogMode('view')
   }
 
   return (
@@ -116,16 +174,12 @@ export default function DiscountsPage() {
       </div>
 
       <DiscountDialog
-        open={!!selectedDiscount || dialogMode === 'add'}
-        onOpenChange={(open) => {
-          if (!open) {
-            setSelectedDiscount(null)
-            setDialogMode('view')
-          }
-        }}
+        open={isDiscountDialogOpen}
+        onOpenChange={handleDialogClose}
         mode={dialogMode}
         discount={selectedDiscount}
         onSubmit={handleSubmit}
+        onModeChange={setDialogMode}
         isLoading={isCreating || isUpdating}
       />
 
