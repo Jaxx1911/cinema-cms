@@ -1,6 +1,7 @@
 "use client"
 
-import { useEffect, useState, useRef } from "react"
+import { useState, useEffect } from "react"
+import { CheckCircle2, XCircle, Edit } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -12,283 +13,232 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Edit, X, User, Mail, Phone, Lock, Calendar, MapPin } from "lucide-react"
-import { Calendar as CalendarComponent } from "@/components/ui/calendar"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { format } from "date-fns"
-import { vi } from "date-fns/locale"
-import { cn } from "@/lib/utils"
+import { useToast } from "@/hooks/use-toast"
+import { useCreateUser, useUpdateUser } from "@/hooks/use-users"
 
-const initialFormData = {
-  full_name: "",
-  email: "",
-  phone: "",
-  password: "",
-  date_of_birth: null,
-  address: "",
-  role: "user",
-}
+export function UserDialog({ isOpen, onClose, user, mode, onSave, setDialogMode, setIsUserDialogOpen }) {
+  const { toast } = useToast()
+  const { createUser, isLoading: isCreating } = useCreateUser()
+  const { updateUser, isLoading: isUpdating } = useUpdateUser()
 
-export function UserDialog({
-  isOpen,
-  onClose,
-  mode,
-  user,
-  onSave,
-  onModeChange,
-}) {
-  const [formData, setFormData] = useState(initialFormData)
-  const [date, setDate] = useState(null)
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    role: "customer",
+  })
 
   useEffect(() => {
-    if (user && (mode === "view" || mode === "edit")) {
+    if (user && mode !== "add") {
       setFormData({
-        full_name: user.full_name || "",
+        name: user.name || "",
         email: user.email || "",
         phone: user.phone || "",
-        password: "",
-        date_of_birth: user.date_of_birth ? new Date(user.date_of_birth) : null,
-        address: user.address || "",
-        role: user.role || "user",
+        role: user.role || "customer",
       })
-      setDate(user.date_of_birth ? new Date(user.date_of_birth) : null)
-    } else if (!user || mode === "add") {
-      setFormData(initialFormData)
-      setDate(null)
+    } else if (mode === "add") {
+      setFormData({
+        name: "",
+        email: "",
+        phone: "",
+        role: "customer",
+      })
     }
-  }, [user, mode, isOpen])
+  }, [user, mode])
 
-  const handleInputChange = (e) => {
+  const handleChange = (e) => {
     const { name, value } = e.target
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }))
+    setFormData((prev) => ({ ...prev, [name]: value }))
   }
 
-  const handleDateSelect = (selectedDate) => {
-    setDate(selectedDate)
-    setFormData((prev) => ({
-      ...prev,
-      date_of_birth: selectedDate,
-    }))
+  const handleRoleChange = (value) => {
+    setFormData((prev) => ({ ...prev, role: value }))
   }
 
-  const handleSubmit = async () => {
-    try {
-      const formDataToSend = new FormData()
-      Object.keys(formData).forEach((key) => {
-        if (formData[key] !== null && formData[key] !== "") {
-          formDataToSend.append(key, formData[key])
-        }
+  const handleStatusChange = (value) => {
+    setFormData((prev) => ({ ...prev, status: value }))
+  }
+
+  const handleSubmit = (e) => {
+    e.preventDefault()
+
+    if (mode === "add") {
+      createUser(formData, {
+        onSuccess: () => {
+          toast({
+            title: "Thành công",
+            description: "Thêm người dùng mới thành công",
+            icon: <CheckCircle2 className="h-5 w-5 text-green-500" />,
+          })
+          handleClose()
+        },
+        onError: (error) => {
+          toast({
+            title: "Lỗi",
+            description: error.message || "Có lỗi xảy ra khi thêm người dùng",
+            icon: <XCircle className="h-5 w-5 text-red-500" />,
+          })
+        },
       })
-
-      await onSave(formDataToSend)
-    } catch (error) {
-      console.error("Error saving user:", error)
+    } else {
+      updateUser(
+        { id: user.id, userData: formData },
+        {
+          onSuccess: () => {
+            toast({
+              title: "Thành công",
+              description: "Cập nhật người dùng thành công",
+              icon: <CheckCircle2 className="h-5 w-5 text-green-500" />,
+            })
+            handleClose()
+          },
+          onError: (error) => {
+            toast({
+              title: "Lỗi",
+              description: error.message || "Có lỗi xảy ra khi cập nhật người dùng",
+              icon: <XCircle className="h-5 w-5 text-red-500" />,
+            })
+          },
+        }
+      )
     }
   }
 
   const handleClose = () => {
-    setFormData(initialFormData)
-    setDate(null)
+    setFormData({
+      name: "",
+      email: "",
+      phone: "",
+      role: "customer",
+    })
     onClose()
+  }
+
+  const handleSwitchToEdit = () => {
+    // Switch to edit mode without closing the dialog
+    setDialogMode("edit")
   }
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>
-            {mode === "view"
-              ? "Chi tiết người dùng"
-              : mode === "edit"
-              ? "Chỉnh sửa thông tin người dùng"
-              : "Thêm người dùng mới"}
+            {mode === "add" ? "Thêm người dùng mới" : mode === "edit" ? "Chỉnh sửa người dùng" : "Chi tiết người dùng"}
           </DialogTitle>
           <DialogDescription>
-            {mode === "view"
-              ? "Xem thông tin chi tiết của người dùng"
-              : "Điền thông tin người dùng vào form dưới đây"}
+            {mode === "add"
+              ? "Nhập thông tin người dùng mới"
+              : mode === "edit"
+              ? "Chỉnh sửa thông tin người dùng"
+              : "Xem thông tin chi tiết người dùng"}
           </DialogDescription>
         </DialogHeader>
 
-        <div className="grid gap-4 py-4">
-          <div className="grid gap-2">
-            <Label htmlFor="full_name" className="flex items-center gap-2">
-              <User className="h-4 w-4" /> Họ và tên
-            </Label>
-            <Input
-              id="full_name"
-              name="full_name"
-              value={formData.full_name}
-              onChange={handleInputChange}
-              disabled={mode === "view"}
-              style={{ opacity: 1 }}
-              placeholder="Nhập họ và tên"
-            />
-          </div>
-
-          <div className="grid gap-2">
-            <Label htmlFor="email" className="flex items-center gap-2">
-              <Mail className="h-4 w-4" /> Email
-            </Label>
-            <Input
-              id="email"
-              name="email"
-              type="email"
-              value={formData.email}
-              onChange={handleInputChange}
-              disabled={mode === "view"}
-              style={{ opacity: 1 }}
-              placeholder="Nhập địa chỉ email"
-            />
-          </div>
-
-          <div className="grid gap-2">
-            <Label htmlFor="phone" className="flex items-center gap-2">
-              <Phone className="h-4 w-4" /> Số điện thoại
-            </Label>
-            <Input
-              id="phone"
-              name="phone"
-              value={formData.phone}
-              onChange={handleInputChange}
-              disabled={mode === "view"}
-              style={{ opacity: 1 }}
-              placeholder="Nhập số điện thoại"
-            />
-          </div>
-
-          {mode !== "view" && (
-            <div className="grid gap-2">
-              <Label htmlFor="password" className="flex items-center gap-2">
-                <Lock className="h-4 w-4" /> Mật khẩu
-              </Label>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">Họ và tên</Label>
               <Input
-                id="password"
-                name="password"
-                type="password"
-                value={formData.password}
-                onChange={handleInputChange}
-                placeholder={mode === "edit" ? "Để trống nếu không muốn thay đổi" : "Nhập mật khẩu"}
-                style={{ opacity: 1 }}
+                id="name"
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+                disabled={mode === "view"}
+                required
+                style={{
+                  opacity: 1,
+                }}
               />
             </div>
-          )}
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                name="email"
+                type="email"
+                value={formData.email}
+                onChange={handleChange}
+                disabled={mode === "view"}
+                required
+                style={{
+                  opacity: 1,
+                }}
+              />
+            </div>
+          </div>
 
-          <div className="grid gap-2">
-            <Label className="flex items-center gap-2">
-              <Calendar className="h-4 w-4" /> Ngày sinh
-            </Label>
-            <Popover>
-              <PopoverTrigger asChild>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="phone">Số điện thoại</Label>
+              <Input
+                id="phone"
+                name="phone"
+                value={formData.phone || "--:--"}
+                onChange={handleChange}
+                disabled={mode === "view"}
+                style={{
+                  opacity: 1,
+                }}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="role">Vai trò</Label>
+              <Select value={formData.role} onValueChange={handleRoleChange} disabled={mode === "view"} >
+                <SelectTrigger style={{
+                  opacity: 1,
+                }}>
+                  <SelectValue placeholder="Chọn vai trò" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="admin" >Quản trị viên</SelectItem>
+                  <SelectItem value="customer">Khách hàng</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            {mode === "view" ? (
+              <>
                 <Button
+                  type="button"
                   variant="outline"
-                  className={cn(
-                    "w-full justify-start text-left font-normal",
-                    !date && "text-muted-foreground"
-                  )}
-                  disabled={mode === "view"}
+                  className="border-gray-300 bg-white text-black hover:bg-gray-50"
+                  onClick={handleSwitchToEdit}
                 >
-                  {date ? (
-                    format(date, "PPP", { locale: vi })
-                  ) : (
-                    <span>Chọn ngày sinh</span>
-                  )}
+                  <Edit className="mr-2 h-4 w-4" />
+                  Chỉnh sửa
                 </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0">
-                <CalendarComponent
-                  mode="single"
-                  selected={date}
-                  onSelect={handleDateSelect}
-                  disabled={mode === "view"}
-                  locale={vi}
-                />
-              </PopoverContent>
-            </Popover>
-          </div>
-
-          <div className="grid gap-2">
-            <Label htmlFor="address" className="flex items-center gap-2">
-              <MapPin className="h-4 w-4" /> Địa chỉ
-            </Label>
-            <Input
-              id="address"
-              name="address"
-              value={formData.address}
-              onChange={handleInputChange}
-              disabled={mode === "view"}
-              style={{ opacity: 1 }}
-              placeholder="Nhập địa chỉ"
-            />
-          </div>
-
-          <div className="grid gap-2">
-            <Label htmlFor="role" className="flex items-center gap-2">
-              <User className="h-4 w-4" /> Vai trò
-            </Label>
-            <Select
-              value={formData.role}
-              onValueChange={(value) => handleInputChange({ target: { name: "role", value } })}
-              disabled={mode === "view"}
-              style={{ opacity: 1 }}
-            >
-              <SelectTrigger id="role" style={{ opacity: 1 }}>
-                <SelectValue placeholder="Chọn vai trò" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="user">Người dùng</SelectItem>
-                <SelectItem value="admin">Quản trị viên</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-
-        <DialogFooter className="flex items-center justify-between">
-          {mode === "view" ? (
-            <>
-              <Button
-                type="button"
-                onClick={() => onModeChange("edit")}
-                className="bg-white text-black border border-gray-300"
-              >
-                <Edit className="mr-2 h-4 w-4" />
-                Chỉnh sửa
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleClose}
-                className="bg-blue-600 hover:bg-blue-700 text-white"
-              >
-                <X className="mr-2 h-4 w-4" />
-                Đóng
-              </Button>
-            </>
-          ) : (
-            <>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleClose}
-                className="bg-white text-black border border-gray-300"
-              >
-                <X className="mr-2 h-4 w-4" />
-                Hủy
-              </Button>
-              <Button
-                type="button"
-                onClick={handleSubmit}
-                className="bg-blue-600 hover:bg-blue-700 text-white"
-              >
-                {mode === "edit" ? "Cập nhật" : "Thêm mới"}
-              </Button>
-            </>
-          )}
-        </DialogFooter>
+                <Button 
+                  type="button" 
+                  onClick={handleClose}
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  Đóng
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={handleClose}
+                  className="border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
+                >
+                  Hủy
+                </Button>
+                <Button 
+                  type="submit" 
+                  disabled={isCreating || isUpdating}
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  {mode === "add" ? "Thêm" : "Cập nhật"}
+                </Button>
+              </>
+            )}
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   )

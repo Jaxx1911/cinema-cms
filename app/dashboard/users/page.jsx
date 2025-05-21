@@ -1,12 +1,12 @@
 "use client"
 
-import { useState, useRef } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Plus, CheckCircle2, XCircle } from "lucide-react"
 import UserList from "@/components/users/user-list"
 import UserFilter from "@/components/users/user-filter"
 import { useToast } from "@/hooks/use-toast"
-import { mockUsers } from "@/lib/mock-data"
+import { useUsers, useCreateUser, useUpdateUser, useDeleteUser } from "@/hooks/use-users"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -25,13 +25,37 @@ export default function UsersPage() {
   const [isUserDialogOpen, setIsUserDialogOpen] = useState(false)
   const [dialogMode, setDialogMode] = useState("view") // view, edit, add
   const [searchTerm, setSearchTerm] = useState("")
+  const [roleFilter, setRoleFilter] = useState("all")
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("")
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pageSize, setPageSize] = useState(10)
   const searchInputRef = useRef(null)
 
-  // Mock data and loading states - replace with actual API calls
-  const users = mockUsers
-  const isLoading = false
-  const error = null
+  // API hooks
+  const { data: usersData, isLoading, error } = useUsers({
+    page: currentPage,
+    limit: pageSize,
+    search: debouncedSearchTerm,
+    role: roleFilter !== "all" ? roleFilter : undefined,
+  })
+  const { mutate: createUser, isLoading: isCreating } = useCreateUser()
+  const { mutate: updateUser, isLoading: isUpdating } = useUpdateUser()
+  const { mutate: deleteUser, isLoading: isDeleting } = useDeleteUser()
+
+  // Debounce search term
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm)
+      setCurrentPage(1) // Reset to first page when search changes
+    }, 1000)
+    return () => clearTimeout(timer)
+  }, [searchTerm])
+
+  // Reset to first page when filter changes
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [roleFilter])
 
   const handleViewUser = (user) => {
     setSelectedUser(user)
@@ -57,44 +81,32 @@ export default function UsersPage() {
   }
 
   const confirmDelete = () => {
-    // Replace with actual delete API call
-    console.log(`Deleting user with ID: ${selectedUser.id}`)
-    toast({
-      title: "Thành công",
-      description: "Xóa người dùng thành công",
-      variant: "default",
-      icon: <CheckCircle2 className="h-5 w-5 text-green-500" />,
-    })
-    setIsDeleteDialogOpen(false)
+    if (selectedUser) {
+      deleteUser(selectedUser.id, {
+        onSuccess: () => {
+          setIsDeleteDialogOpen(false)
+          setSelectedUser(null)
+        }
+      })
+    }
   }
 
   const handleSaveUser = async (formData) => {
-    try {
-      // Replace with actual API calls
-      if (dialogMode === "edit") {
-        console.log("Updating user:", formData)
-        toast({
-          title: "Thành công",
-          description: "Cập nhật người dùng thành công",
-          variant: "default",
-          icon: <CheckCircle2 className="h-5 w-5 text-green-500" />,
-        })
-      } else {
-        console.log("Creating user:", formData)
-        toast({
-          title: "Thành công",
-          description: "Thêm người dùng mới thành công",
-          variant: "default",
-          icon: <CheckCircle2 className="h-5 w-5 text-green-500" />,
-        })
-      }
-      setIsUserDialogOpen(false)
-    } catch (error) {
-      toast({
-        title: "Lỗi",
-        description: error.message || "Có lỗi xảy ra",
-        variant: "destructive",
-        icon: <XCircle className="h-5 w-5 text-red-500" />,
+    if (dialogMode === "edit" && selectedUser) {
+      updateUser(
+        { id: selectedUser.id, ...formData },
+        {
+          onSuccess: () => {
+            setIsUserDialogOpen(false)
+            setSelectedUser(null)
+          }
+        }
+      )
+    } else {
+      createUser(formData, {
+        onSuccess: () => {
+          setIsUserDialogOpen(false)
+        }
       })
     }
   }
@@ -123,16 +135,22 @@ export default function UsersPage() {
         <UserFilter
           searchTerm={searchTerm}
           setSearchTerm={setSearchTerm}
+          roleFilter={roleFilter}
+          setRoleFilter={setRoleFilter}
           searchInputRef={searchInputRef}
         />
         <UserList
-          users={users}
+          users={usersData?.body?.users || []}
+          total={usersData?.body?.total || 0}
+          currentPage={currentPage}
+          pageSize={pageSize}
+          onPageChange={setCurrentPage}
+          onPageSizeChange={setPageSize}
           loading={isLoading}
           error={error}
           handleViewUser={handleViewUser}
           handleEditUser={handleEditUser}
           handleDeleteUser={handleDeleteUser}
-          searchTerm={searchTerm}
         />
       </div>
 
@@ -142,7 +160,8 @@ export default function UsersPage() {
         mode={dialogMode}
         user={selectedUser}
         onSave={handleSaveUser}
-        onModeChange={handleModeChange}
+        setDialogMode={setDialogMode}
+        setIsUserDialogOpen={setIsUserDialogOpen}
       />
 
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
@@ -150,7 +169,7 @@ export default function UsersPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Xác nhận xóa</AlertDialogTitle>
             <AlertDialogDescription>
-              Bạn có chắc chắn muốn xóa người dùng "{selectedUser?.name}"? Hành động này không thể hoàn tác.
+              Bạn có chắc chắn muốn xóa người dùng "{selectedUser?.username}"? Hành động này không thể hoàn tác.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -158,8 +177,9 @@ export default function UsersPage() {
             <AlertDialogAction
               onClick={confirmDelete}
               className="bg-red-600 hover:bg-red-700"
+              disabled={isDeleting}
             >
-              Xóa
+              {isDeleting ? "Đang xóa..." : "Xóa"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

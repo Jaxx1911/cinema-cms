@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Bell, User, Search } from "lucide-react"
+import { Bell, Search } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -11,8 +11,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Input } from "@/components/ui/input"
+import { AuthButton } from "@/components/auth/auth-button"
 
 export function Header() {
   return (
@@ -22,27 +22,7 @@ export function Header() {
         <Input type="search" placeholder="Tìm kiếm..." className="pl-8" />
       </div>
       <div className="ml-auto flex items-center gap-4">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="relative h-8 w-8 rounded-full">
-              <Avatar className="h-8 w-8">
-                <AvatarImage src="/placeholder.svg?height=32&width=32" alt="Avatar" />
-                <AvatarFallback>AD</AvatarFallback>
-              </Avatar>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Tài khoản của tôi</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem>
-              <User className="mr-2 h-4 w-4" />
-              <span>Hồ sơ</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem>Cài đặt</DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-red-500 focus:bg-red-50 focus:text-red-600">Đăng xuất</DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <AuthButton />
       </div>
     </header>
   )

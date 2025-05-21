@@ -18,24 +18,43 @@ export const getMovieById = async (id) => {
 }
 
 export const createMovie = async (movie) => {
+  const accessToken = localStorage.getItem("accessToken")
   baseQuery.defaults.headers.common["Content-Type"] = "multipart/form-data"
-  const response = await baseQuery.postForm("/movie", movie)
+  const response = await baseQuery.postForm("/movie", movie, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  })
   return response.data
 }
 
 export const updateMovie = async (id, movie) => {
+  const accessToken = localStorage.getItem("accessToken")
   baseQuery.defaults.headers.common["Content-Type"] = "multipart/form-data"
-  console.log(movie)
-  const response = await baseQuery.putForm(`/movie/${id}`, movie)
+  const response = await baseQuery.putForm(`/movie/${id}`, movie, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  })
   return response.data
 }
 
 export const stopMovie = async (id) => {
-  const response = await baseQuery.put(`/movie/stop/${id}`)
+  const accessToken = localStorage.getItem("accessToken")
+  const response = await baseQuery.put(`/movie/stop/${id}`, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  })
   return response.data
 }
 
 export const resumeMovie = async (id) => {
-  const response = await baseQuery.put(`/movie/reshow/${id}`)
+  const accessToken = localStorage.getItem("accessToken")
+  const response = await baseQuery.put(`/movie/reshow/${id}`, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  })
   return response.data
 }
