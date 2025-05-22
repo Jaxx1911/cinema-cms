@@ -175,7 +175,7 @@ export function UserDialog({ isOpen, onClose, user, mode, onSave, setDialogMode,
               <Input
                 id="phone"
                 name="phone"
-                value={formData.phone || "--:--"}
+                value={formData.phone || (mode === "view" ? "--:--" : "")}
                 onChange={handleChange}
                 disabled={mode === "view"}
                 style={{

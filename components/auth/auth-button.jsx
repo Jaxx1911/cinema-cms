@@ -1,6 +1,6 @@
 "use client"
 
-import { LogIn, LogOut, User } from "lucide-react"
+import { LogIn, LogOut, User, Settings } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useAuth } from "@/components/auth/auth-provider"
 import {
@@ -42,7 +42,10 @@ export function AuthButton() {
             <User className="mr-2 h-4 w-4" />
             <span>Hồ sơ</span>
           </DropdownMenuItem>
-          <DropdownMenuItem>Cài đặt</DropdownMenuItem>
+          <DropdownMenuItem>
+            <Settings className="mr-2 h-4 w-4" />
+            Cài đặt
+          </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem className="text-red-500 focus:bg-red-50 focus:text-red-600" onClick={logout}>
             <LogOut className="mr-2 h-4 w-4" />

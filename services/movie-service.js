@@ -58,3 +58,8 @@ export const resumeMovie = async (id) => {
   })
   return response.data
 }
+
+export const getMoviesByStatus = async (status) => {
+  const response = await baseQuery.get(`/movie?status=${status}`)
+  return response.data
+}

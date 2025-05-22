@@ -39,9 +39,9 @@ export default function UsersPage() {
     search: debouncedSearchTerm,
     role: roleFilter !== "all" ? roleFilter : undefined,
   })
-  const { mutate: createUser, isLoading: isCreating } = useCreateUser()
-  const { mutate: updateUser, isLoading: isUpdating } = useUpdateUser()
-  const { mutate: deleteUser, isLoading: isDeleting } = useDeleteUser()
+  const { createUser, isLoading: isCreating } = useCreateUser()
+  const { updateUser, isLoading: isUpdating } = useUpdateUser()
+  const { deleteUser, isLoading: isDeleting } = useDeleteUser()
 
   // Debounce search term
   useEffect(() => {
@@ -86,7 +86,7 @@ export default function UsersPage() {
         onSuccess: () => {
           setIsDeleteDialogOpen(false)
           setSelectedUser(null)
-        }
+        },
       })
     }
   }
@@ -94,7 +94,7 @@ export default function UsersPage() {
   const handleSaveUser = async (formData) => {
     if (dialogMode === "edit" && selectedUser) {
       updateUser(
-        { id: selectedUser.id, ...formData },
+        { id: selectedUser.id, userData: formData },
         {
           onSuccess: () => {
             setIsUserDialogOpen(false)
@@ -169,7 +169,7 @@ export default function UsersPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Xác nhận xóa</AlertDialogTitle>
             <AlertDialogDescription>
-              Bạn có chắc chắn muốn xóa người dùng "{selectedUser?.username}"? Hành động này không thể hoàn tác.
+              Bạn có chắc chắn muốn xóa người dùng {selectedUser?.name} ? Hành động này không thể hoàn tác.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

@@ -92,7 +92,7 @@ export default function UserList({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {users.sort((a, b) => a.role === "admin" ? -1 : new Date(a.created_at) - new Date(b.created_at)).map((user) => (
+            {users.sort((a, b) => a.role === "admin" ? -1 : (a.name.localeCompare(b.name))).map((user) => (
               <TableRow key={user.id}>
                 <TableCell className="text-blue-600">{user.name}</TableCell>
                 <TableCell>{user.email}</TableCell>
