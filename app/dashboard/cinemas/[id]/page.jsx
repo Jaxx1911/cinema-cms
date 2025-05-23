@@ -11,11 +11,12 @@ import {
   Clock,
   CheckCircle2,
   XCircle,
+  Building2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { RoomsTable } from "@/components/cinemas/rooms-table";
-import { useGetCinemas } from "@/hooks/use-cinema";
-import { useGetCinemaById } from "@/hooks/use-cinema";
+import { useGetCinemas, useGetCinemaById, useUpdateCinema } from "@/hooks/use-cinema";
+import { useGetSeatsByRoomId, useGetRoomById , useGetRooms } from "@/hooks/use-room";
 import {
   Card,
   CardContent,
@@ -26,7 +27,6 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useParams } from "next/navigation";
 import { useRouter } from "next/navigation";
-import { useUpdateCinema } from "@/hooks/use-cinema";
 import { useState } from "react";
 import { CinemaDialog } from "@/components/cinemas/cinema-dialog";
 import axios from "axios";
@@ -37,6 +37,8 @@ export default function CinemaDetailsPage() {
   const { data: cinema, isLoading, error } = useGetCinemaById(params.id);
   const [isCinemaDialogOpen, setIsCinemaDialogOpen] = useState(false);
   const [selectedCinema, setSelectedCinema] = useState(null);
+  const [selectedRoom, setSelectedRoom] = useState(null);
+  const [isRoomDialogOpen, setIsRoomDialogOpen] = useState(false);
   const [dialogMode, setDialogMode] = useState("view");
   const {
     mutate: updateCinema,
@@ -133,6 +135,7 @@ export default function CinemaDetailsPage() {
     setDialogMode("edit");
     setIsCinemaDialogOpen(true);
   };
+  
   if (isLoading) {
     return <div>Loading...</div>;
   }
@@ -182,9 +185,14 @@ export default function CinemaDetailsPage() {
                 <dl className="grid grid-cols-2 gap-4">
                   <div className=" rounded-lg p-1">
                     <dt className="text-sm font-medium text-gray-500 mb-2">
-                      Cinema Name
+                      Tên rạp phim
                     </dt>
-                    <dd className="text-lg text-gray-900">{cinema?.name}</dd>
+                    <div className="flex items-center gap-2">
+                      <Building2 className="h-5 w-5 text-muted-foreground" />
+                      <dd className="text-lg text-gray-900">
+                        {cinema?.name}
+                      </dd>
+                    </div>
                   </div>
                   <div className=" rounded-lg p-1">
                     <dt className="text-sm font-medium text-gray-500 mb-2">
@@ -192,10 +200,10 @@ export default function CinemaDetailsPage() {
                     </dt>
                     <dd>
                       <div
-                        className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                        className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${
                           cinema?.is_active
                             ? "bg-green-100 text-green-800"
-                            : "bg-yellow-100 text-yellow-800"
+                            : "bg-gray-100 text-gray-800"
                         }`}
                       >
                         {cinema?.is_active ? "Hoạt động" : "Dừng hoạt động"}
@@ -237,29 +245,7 @@ export default function CinemaDetailsPage() {
                 </dl>
               </CardContent>
             </Card>
-
-            <Tabs defaultValue="rooms" className="space-y-4">
-              <TabsContent value="rooms" className="space-y-4">
-                <div className="rounded-lg border bg-white p-4 shadow-sm">
-                  <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-lg font-medium text-gray-900">
-                      Danh sách phòng chiếu
-                    </h3>
-                    <Button
-                      className="bg-blue-600 hover:bg-blue-700"
-                      onClick={() => onSave({ ...cinema, mode: "add" })}
-                    >
-                      <Plus className="mr-2 h-4 w-4" />
-                      Thêm phòng chiếu
-                    </Button>
-                  </div>
-                  <RoomsTable
-                    rooms={cinema?.rooms || []}
-                    cinemaId={cinema?.id}
-                  />
-                </div>
-              </TabsContent>
-            </Tabs>
+            <RoomsTable rooms={cinema?.rooms || []} cinemaId={cinema?.id} />
           </div>
         </Card>
       </div>

@@ -29,7 +29,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
+import { Switch } from "@/components/ui/switch";
 export function CinemaDialog({
   isOpen,
   onClose,
@@ -40,15 +40,26 @@ export function CinemaDialog({
   const isViewMode = mode === "view";
   const isAddMode = mode === "add";
   const isEditMode = mode === "edit";
-  
-    const [formData, setFormData] = useState({
+
+  const [formData, setFormData] = useState({
     id: "",
     name: "",
     address: "",
     opening_hours: "",
+    opening_hour: "",
+    closing_hour: "",
     phone: "",
     is_active: true,
   });
+
+  const updateOpeningHours = (opening, closing) => {
+    if (opening && closing) {
+      setFormData((prev) => ({
+        ...prev,
+        opening_hours: `${opening} - ${closing}`,
+      }));
+    }
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -58,10 +69,9 @@ export function CinemaDialog({
   const handleStatusChange = (value) => {
     setFormData((prev) => ({
       ...prev,
-      is_active: value === 'true' || value === true ? true : false,
+      is_active: value === "true" || value === true ? true : false,
     }));
   };
-  
 
   const resetForm = () => {
     setFormData({
@@ -69,7 +79,8 @@ export function CinemaDialog({
       name: "",
       address: "",
       opening_hours: "",
-      closing_hours: "",
+      opening_hour: "",
+      closing_hour: "",
       phone: "",
       is_active: true,
     });
@@ -77,12 +88,15 @@ export function CinemaDialog({
 
   useEffect(() => {
     if (cinema && isEditMode) {
+      const opening = cinema.opening_hour || "";
+      const closing = cinema.closing_hour || "";
       setFormData({
         id: cinema.id || "",
         name: cinema.name || "",
         address: cinema.address || "",
         opening_hours: cinema.opening_hours || "",
-        closing_hours: cinema.closing_hours || "",
+        opening_hour: opening,
+        closing_hour: closing,
         phone: cinema.phone || "",
         is_active: cinema.is_active === "true" ? true : false,
       });
@@ -90,7 +104,10 @@ export function CinemaDialog({
       resetForm();
     }
   }, [cinema, isEditMode, isAddMode]);
-  
+
+  useEffect(() => {
+    updateOpeningHours(formData.opening_hour, formData.closing_hour);
+  }, [formData.opening_hour, formData.closing_hour]);
 
   const handleClose = () => {
     if (isAddMode) {
@@ -107,6 +124,7 @@ export function CinemaDialog({
     }
     onSave(formData);
     onClose();
+    window.location.reload();
   };
 
   const dialogTitle = isAddMode
@@ -128,8 +146,8 @@ export function CinemaDialog({
 
           <form onSubmit={handleSubmit}>
             <div className="space-y-4">
-              <div className="grid grid-cols-4 gap-4">
-                <div className="space-y-2 col-span-3">
+              <div className="grid grid-cols-5 gap-4">
+                <div className="space-y-2 col-span-4">
                   <Label htmlFor="name">Tên rạp</Label>
                   <Input
                     id="name"
@@ -140,20 +158,23 @@ export function CinemaDialog({
                     placeholder="Nhập tên rạp"
                   />
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-4 col-span-1">
                   <Label htmlFor="status">Trạng thái</Label>
-                  <Select
-                    value={formData.is_active ? "true" : "false"}
-                    onValueChange={handleStatusChange}
-                  >
-                    <SelectTrigger id="status">
-                      <SelectValue placeholder="Chọn trạng thái" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="true">Hoạt động</SelectItem>
-                      <SelectItem value="false">Dừng hoạt động</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      id="status"
+                      checked={formData.is_active}
+                      onCheckedChange={handleStatusChange}
+                      className="data-[state=checked]:bg-green-500"
+                    />
+                    <span
+                      className={`text-sm font-medium ${
+                        formData.is_active ? "text-green-500" : "text-gray-500"
+                      }`}
+                    >
+                      {formData.is_active ? "Hoạt động" : "Dừng hoạt động"}
+                    </span>
+                  </div>
                 </div>
               </div>
               <div className="space-y-2">
@@ -167,32 +188,131 @@ export function CinemaDialog({
                   placeholder="Nhập địa chỉ rạp"
                 />
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="grid grid-cols-1 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="phone">Giờ hoạt động</Label>
-                    <Input
-                      id="opening_hours"
-                      name="opening_hours"
-                      value={formData.opening_hours}
-                      onChange={handleChange}
-                      required
-                      placeholder="Nhập giờ hoạt động"
-                    />
+              <div className="grid grid-cols-4 gap-4">
+                <div className="space-y-2">
+                  <Label>Giờ mở cửa</Label>
+                  <div className="flex gap-2">
+                    <Select
+                      value={formData.opening_hour?.split(":")[0] || ""}
+                      onValueChange={(hour) => {
+                        const minutes =
+                          formData.opening_hour?.split(":")[1] || "00";
+                        const timeString = `${hour}:${minutes}`;
+                        setFormData((prev) => ({
+                          ...prev,
+                          opening_hour: timeString,
+                        }));
+                      }}
+                    >
+                      <SelectTrigger className="w-[110px]">
+                        <SelectValue placeholder="Giờ" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Array.from({ length: 24 }, (_, i) => {
+                          const hour = i.toString().padStart(2, "0");
+                          return (
+                            <SelectItem key={hour} value={hour}>
+                              {hour}
+                            </SelectItem>
+                          );
+                        })}
+                      </SelectContent>
+                    </Select>
+                    <Select
+                      value={formData.opening_hour?.split(":")[1] || ""}
+                      onValueChange={(minute) => {
+                        const hours =
+                          formData.opening_hour?.split(":")[0] || "00";
+                        const timeString = `${hours}:${minute}`;
+                        setFormData((prev) => ({
+                          ...prev,
+                          opening_hour: timeString,
+                        }));
+                      }}
+                    >
+                      <SelectTrigger className="w-[110px]">
+                        <SelectValue placeholder="Phút" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {[...Array(60).keys()].map((minute) => {
+                          const value = minute.toString().padStart(2, "0");
+                          return (
+                            <SelectItem key={value} value={value}>
+                              {value}
+                            </SelectItem>
+                          );
+                        })}
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
-                <div className="grid gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="phone">Số điện thoại</Label>
-                    <Input
-                      id="phone"
-                      name="phone"
-                      value={formData.phone}
-                      onChange={handleChange}
-                      required
-                      placeholder="Nhập số điện thoại"
-                    />
+                <div className="space-y-2">
+                  <Label>Giờ đóng cửa</Label>
+                  <div className="flex gap-2">
+                    <Select
+                      value={formData.closing_hour?.split(":")[0] || ""}
+                      onValueChange={(hour) => {
+                        const minutes =
+                          formData.closing_hour?.split(":")[1] || "00";
+                        const timeString = `${hour}:${minutes}`;
+                        setFormData((prev) => ({
+                          ...prev,
+                          closing_hour: timeString,
+                        }));
+                      }}
+                    >
+                      <SelectTrigger className="w-[110px]">
+                        <SelectValue placeholder="Giờ" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Array.from({ length: 24 }, (_, i) => {
+                          const hour = i.toString().padStart(2, "0");
+                          return (
+                            <SelectItem key={hour} value={hour}>
+                              {hour}
+                            </SelectItem>
+                          );
+                        })}
+                      </SelectContent>
+                    </Select>
+                    <Select
+                      value={formData.closing_hour?.split(":")[1] || ""}
+                      onValueChange={(minute) => {
+                        const hours =
+                          formData.closing_hour?.split(":")[0] || "00";
+                        const timeString = `${hours}:${minute}`;
+                        setFormData((prev) => ({
+                          ...prev,
+                          closing_hour: timeString,
+                        }));
+                      }}
+                    >
+                      <SelectTrigger className="w-[110px]">
+                        <SelectValue placeholder="Phút" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {[...Array(60).keys()].map((minute) => {
+                          const value = minute.toString().padStart(2, "0");
+                          return (
+                            <SelectItem key={value} value={value}>
+                              {value}
+                            </SelectItem>
+                          );
+                        })}
+                      </SelectContent>
+                    </Select>
                   </div>
+                </div>
+                <div className="space-y-2 col-span-2">
+                  <Label htmlFor="phone">Số điện thoại</Label>
+                  <Input
+                    id="phone"
+                    name="phone"
+                    value={formData.phone}
+                    onChange={handleChange}
+                    required
+                    placeholder="Nhập số điện thoại"
+                  />
                 </div>
               </div>
             </div>
@@ -201,7 +321,9 @@ export function CinemaDialog({
               <Button type="button" variant="outline" onClick={handleClose}>
                 Hủy
               </Button>
-              <Button type="submit">Thêm rạp</Button>
+              <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
+                Thêm rạp
+              </Button>
             </DialogFooter>
           </form>
         </DialogContent>
@@ -209,111 +331,195 @@ export function CinemaDialog({
     );
   } else if (isEditMode) {
     return (
-      <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto scrollbar-none">
+      <Dialog open={isOpen} onOpenChange={handleClose}>
+        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto scrollbar-none">
           <DialogHeader>
-            <DialogTitle className="text-2xl font-bold tracking-tight text-gray-900">
-              Chỉnh sửa rạp phim
-            </DialogTitle>
+            <DialogTitle className="text-xl">{dialogTitle}</DialogTitle>
+            <DialogDescription>
+              Nhập thông tin chi tiết về rạp mới
+            </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-6">
-            <Card className="border-0 shadow-sm">
-              <CardContent>
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    onSave(formData);
-                    onClose();
-                  }}
-                  className="grid grid-cols-2 gap-4"
-                >
-                  <div className="rounded-lg p-4">
-                    <label className="text-sm font-medium text-gray-500">
-                      Cinema Name
-                    </label>
-                    <input
-                      type="text"
-                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-                      value={formData.name}
-                      onChange={(e) =>
-                        setFormData({ ...formData, name: e.target.value })
-                      }
+          <form onSubmit={handleSubmit}>
+            <div className="space-y-4">
+              <div className="grid grid-cols-5 gap-4">
+                <div className="space-y-2 col-span-4">
+                  <Label htmlFor="name">Tên rạp</Label>
+                  <Input
+                    id="name"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleChange}
+                    required
+                    placeholder="Nhập tên rạp"
+                  />
+                </div>
+                <div className="space-y-4 col-span-1">
+                  <Label htmlFor="status">Trạng thái</Label>
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      id="status"
+                      checked={formData.is_active}
+                      onCheckedChange={handleStatusChange}
+                      className="data-[state=checked]:bg-green-500"
                     />
+                    <span
+                      className={`text-sm font-medium ${
+                        formData.is_active ? "text-green-500" : "text-gray-500"
+                      }`}
+                    >
+                      {formData.is_active ? "Hoạt động" : "Dừng hoạt động"}
+                    </span>
                   </div>
-
-                  <div className="rounded-lg p-4">
-                    <label className="text-sm font-medium text-gray-500">
-                      Trạng thái
-                    </label>
-                    <select
-                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-                      value={formData.is_active ? true : false}
-                      onChange={e => {
-                        setFormData({ ...formData, is_active: e.target.value === 'true' ? true : false });
-                        console.log("onChange is_active:", e.target.value, formData);
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="address">Địa chỉ</Label>
+                <Input
+                  id="address"
+                  name="address"
+                  value={formData.address}
+                  onChange={handleChange}
+                  required
+                  placeholder="Nhập địa chỉ rạp"
+                />
+              </div>
+              <div className="grid grid-cols-4 gap-4">
+                <div className="space-y-2">
+                  <Label>Giờ mở cửa</Label>
+                  <div className="flex gap-2">
+                    <Select
+                      value={formData.opening_hour?.split(":")[0] || ""}
+                      onValueChange={(hour) => {
+                        const minutes =
+                          formData.opening_hour?.split(":")[1] || "00";
+                        const timeString = `${hour}:${minutes}`;
+                        setFormData((prev) => ({
+                          ...prev,
+                          opening_hour: timeString,
+                        }));
                       }}
                     >
-                      <option value="true">Hoạt động</option>
-                      <option value="false">Dừng hoạt động</option>
-                    </select>
+                      <SelectTrigger className="w-[110px]">
+                        <SelectValue placeholder="Giờ" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Array.from({ length: 24 }, (_, i) => {
+                          const hour = i.toString().padStart(2, "0");
+                          return (
+                            <SelectItem key={hour} value={hour}>
+                              {hour}
+                            </SelectItem>
+                          );
+                        })}
+                      </SelectContent>
+                    </Select>
+                    <Select
+                      value={formData.opening_hour?.split(":")[1] || ""}
+                      onValueChange={(minute) => {
+                        const hours =
+                          formData.opening_hour?.split(":")[0] || "00";
+                        const timeString = `${hours}:${minute}`;
+                        setFormData((prev) => ({
+                          ...prev,
+                          opening_hour: timeString,
+                        }));
+                      }}
+                    >
+                      <SelectTrigger className="w-[110px]">
+                        <SelectValue placeholder="Phút" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {[...Array(60).keys()].map((minute) => {
+                          const value = minute.toString().padStart(2, "0");
+                          return (
+                            <SelectItem key={value} value={value}>
+                              {value}
+                            </SelectItem>
+                          );
+                        })}
+                      </SelectContent>
+                    </Select>
                   </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>Giờ đóng cửa</Label>
+                  <div className="flex gap-2">
+                    <Select
+                      value={formData.closing_hour?.split(":")[0] || ""}
+                      onValueChange={(hour) => {
+                        const minutes =
+                          formData.closing_hour?.split(":")[1] || "00";
+                        const timeString = `${hour}:${minutes}`;
+                        setFormData((prev) => ({
+                          ...prev,
+                          closing_hour: timeString,
+                        }));
+                      }}
+                    >
+                      <SelectTrigger className="w-[110px]">
+                        <SelectValue placeholder="Giờ" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Array.from({ length: 24 }, (_, i) => {
+                          const hour = i.toString().padStart(2, "0");
+                          return (
+                            <SelectItem key={hour} value={hour}>
+                              {hour}
+                            </SelectItem>
+                          );
+                        })}
+                      </SelectContent>
+                    </Select>
+                    <Select
+                      value={formData.closing_hour?.split(":")[1] || ""}
+                      onValueChange={(minute) => {
+                        const hours =
+                          formData.closing_hour?.split(":")[0] || "00";
+                        const timeString = `${hours}:${minute}`;
+                        setFormData((prev) => ({
+                          ...prev,
+                          closing_hour: timeString,
+                        }));
+                      }}
+                    >
+                      <SelectTrigger className="w-[110px]">
+                        <SelectValue placeholder="Phút" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {[...Array(60).keys()].map((minute) => {
+                          const value = minute.toString().padStart(2, "0");
+                          return (
+                            <SelectItem key={value} value={value}>
+                              {value}
+                            </SelectItem>
+                          );
+                        })}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="space-y-2 col-span-2">
+                  <Label htmlFor="phone">Số điện thoại</Label>
+                  <Input
+                    id="phone"
+                    name="phone"
+                    value={formData.phone}
+                    onChange={handleChange}
+                    required
+                    placeholder="Nhập số điện thoại"
+                  />
+                </div>
+              </div>
+            </div>
 
-                  <div className="col-span-2 rounded-lg p-4">
-                    <label className="text-sm font-medium text-gray-500">
-                      Địa chỉ
-                    </label>
-                    <input
-                      type="text"
-                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-                      value={formData.address}
-                      onChange={(e) =>
-                        setFormData({ ...formData, address: e.target.value })
-                      }
-                    />
-                  </div>
-
-                  <div className="rounded-lg p-4">
-                    <label className="text-sm font-medium text-gray-500">
-                      Số điện thoại
-                    </label>
-                    <input
-                      type="text"
-                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-                      value={formData.phone}
-                      onChange={(e) =>
-                        setFormData({ ...formData, phone: e.target.value })
-                      }
-                    />
-                  </div>
-
-                  <div className="rounded-lg p-4">
-                    <label className="text-sm font-medium text-gray-500">
-                      Giờ hoạt động
-                    </label>
-                    <input
-                      type="text"
-                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-                      value={formData.opening_hours}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          opening_hours: e.target.value,
-                        })
-                      }
-                    />
-                  </div>
-
-                  <div className="col-span-2 flex justify-end gap-x-2 mt-4">
-                    <Button type="button" variant="outline" onClick={onClose}>
-                      Hủy
-                    </Button>
-                    <Button type="submit">Lưu thay đổi</Button>
-                  </div>
-                </form>
-              </CardContent>
-            </Card>
-          </div>
+            <DialogFooter className="mt-4">
+              <Button type="button" variant="outline" onClick={handleClose}>
+                Hủy
+              </Button>
+              <Button type="submit">Lưu thay đổi </Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
     );

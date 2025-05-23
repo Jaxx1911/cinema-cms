@@ -515,23 +515,7 @@ export function MovieDialog({ isOpen, onClose, movie, mode = "view", onSave, set
             </div>
 
             {/* Full width fields below */}
-            <div className="space-y-2">
-              <Label htmlFor="description" className="flex items-center gap-2">
-                <FileText className="h-4 w-4" /> Mô tả
-              </Label>
-              <Textarea
-                id="description"
-                name="description"
-                value={formData.description}
-                onChange={handleChange}
-                disabled={isViewMode}
-                rows={3}
-                placeholder="Nhập mô tả phim"
-                style={{
-                  opacity: 1,
-                }}
-              />
-            </div>
+            
             <div className="space-y-2">
               <Label htmlFor="directors" className="flex items-center gap-2">
                 <User className="h-4 w-4" /> Đạo diễn
