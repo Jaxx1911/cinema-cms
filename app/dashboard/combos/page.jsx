@@ -79,9 +79,6 @@ export default function CombosPage() {
   }
 
   const handleSaveCombo = async (formData) => {
-    console.log("formData", formData)
-    console.log("dialogMode", dialogMode)
-    console.log("selectedCombo", selectedCombo)
     try {
       if (dialogMode === "edit") {
         updateCombo(

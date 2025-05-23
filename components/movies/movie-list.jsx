@@ -101,7 +101,7 @@ export default function MovieList({
                   {movie.status === "new"
                     ? "Mới"
                     : movie.status === "incoming"
-                    ? "Sắp ra mắt"
+                    ? "Sắp chiếu"
                     : "Ngừng chiếu"}
                 </div>
               </TableCell>

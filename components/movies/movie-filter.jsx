@@ -1,15 +1,8 @@
 "use client"
 
-import { Search, Filter } from "lucide-react"
+import { Search } from "lucide-react"
 import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 export default function MovieFilter({ 
   searchTerm, 
@@ -22,7 +15,7 @@ export default function MovieFilter({
 }) {
   return (
     <div className="relative flex mb-4 gap-2">
-      <div className="w-[90%]">
+      <div className="w-[70%]">
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
         <Input
           ref={searchInputRef}
@@ -33,40 +26,34 @@ export default function MovieFilter({
           onChange={(e) => setSearchTerm(e.target.value)}
         />
       </div>
-      <DropdownMenu className="w-[10%]">
-        <DropdownMenuTrigger asChild>
-          <Button variant="outline" className="gap-2">
-            <Filter className="h-4 w-4" />
-            {statusFilter === "all" ? "Lọc theo trạng thái" : statusFilter === "new" ? "Mới" : statusFilter === "incoming" ? "Sắp chiếu" : "Ngừng chiếu"}
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent>
-          <DropdownMenuRadioGroup value={statusFilter} onValueChange={setStatusFilter}>
-            <DropdownMenuRadioItem value="all">Tất cả</DropdownMenuRadioItem>
-            <DropdownMenuRadioItem value="new">Mới</DropdownMenuRadioItem>
-            <DropdownMenuRadioItem value="incoming">Sắp chiếu</DropdownMenuRadioItem>
-            <DropdownMenuRadioItem value="stop">Ngừng chiếu</DropdownMenuRadioItem>
-          </DropdownMenuRadioGroup>
-        </DropdownMenuContent>
-      </DropdownMenu>
-      <DropdownMenu className="w-[10%]">
-        <DropdownMenuTrigger asChild>
-          <Button variant="outline" className="gap-2">
-            <Filter className="h-4 w-4" />
-            {tagFilter === "all" ? "Lọc theo nhãn" : tagFilter === "P" ? "P" : tagFilter === "K" ? "K" : tagFilter === "C13" ? "C13" : tagFilter === "C16" ? "C16" : tagFilter === "C18" ? "C18" : "Tất cả"}
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent>
-          <DropdownMenuRadioGroup value={tagFilter} onValueChange={setTagFilter}>
-            <DropdownMenuRadioItem value="all">Tất cả</DropdownMenuRadioItem>
-            <DropdownMenuRadioItem value="P">P</DropdownMenuRadioItem>
-            <DropdownMenuRadioItem value="K">K</DropdownMenuRadioItem>
-            <DropdownMenuRadioItem value="C13">C13</DropdownMenuRadioItem>
-            <DropdownMenuRadioItem value="C16">C16</DropdownMenuRadioItem>
-            <DropdownMenuRadioItem value="C18">C18</DropdownMenuRadioItem>
-          </DropdownMenuRadioGroup>
-        </DropdownMenuContent>
-      </DropdownMenu>
+      <div className="w-[15%]">
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger>
+            <SelectValue placeholder="Lọc theo trạng thái" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Tất cả</SelectItem>
+            <SelectItem value="new">Mới</SelectItem>
+            <SelectItem value="incoming">Sắp chiếu</SelectItem>
+            <SelectItem value="stop">Ngừng chiếu</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="w-[15%]">
+        <Select value={tagFilter} onValueChange={setTagFilter}>
+          <SelectTrigger>
+            <SelectValue placeholder="Lọc theo nhãn" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Tất cả</SelectItem>
+            <SelectItem value="P">P</SelectItem>
+            <SelectItem value="K">K</SelectItem>
+            <SelectItem value="C13">C13</SelectItem>
+            <SelectItem value="C16">C16</SelectItem>
+            <SelectItem value="C18">C18</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
     </div>
   )
 }

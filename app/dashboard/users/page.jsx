@@ -1,160 +1,189 @@
 "use client"
 
-import { useState } from "react"
-import Link from "next/link"
-import { Edit, Trash2, Eye, Search, UserPlus } from "lucide-react"
+import { useState, useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Plus, CheckCircle2, XCircle } from "lucide-react"
+import UserList from "@/components/users/user-list"
+import UserFilter from "@/components/users/user-filter"
+import { useToast } from "@/hooks/use-toast"
+import { useUsers, useCreateUser, useUpdateUser, useDeleteUser } from "@/hooks/use-users"
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
-import { mockUsers } from "@/lib/mock-data"
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import { UserDialog } from "@/components/users/user-dialog"
 
 export default function UsersPage() {
+  const { toast } = useToast()
+  const [selectedUser, setSelectedUser] = useState(null)
+  const [isUserDialogOpen, setIsUserDialogOpen] = useState(false)
+  const [dialogMode, setDialogMode] = useState("view") // view, edit, add
   const [searchTerm, setSearchTerm] = useState("")
+  const [roleFilter, setRoleFilter] = useState("all")
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
-  const [userToDelete, setUserToDelete] = useState(null)
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("")
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pageSize, setPageSize] = useState(10)
+  const searchInputRef = useRef(null)
 
-  const filteredUsers = mockUsers.filter(
-    (user) =>
-      user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchTerm.toLowerCase()),
-  )
+  // API hooks
+  const { data: usersData, isLoading, error } = useUsers({
+    page: currentPage,
+    limit: pageSize,
+    search: debouncedSearchTerm,
+    role: roleFilter !== "all" ? roleFilter : undefined,
+  })
+  const { createUser, isLoading: isCreating } = useCreateUser()
+  const { updateUser, isLoading: isUpdating } = useUpdateUser()
+  const { deleteUser, isLoading: isDeleting } = useDeleteUser()
 
-  const handleDeleteClick = (id) => {
-    setUserToDelete(id)
+  // Debounce search term
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm)
+      setCurrentPage(1) // Reset to first page when search changes
+    }, 1000)
+    return () => clearTimeout(timer)
+  }, [searchTerm])
+
+  // Reset to first page when filter changes
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [roleFilter])
+
+  const handleViewUser = (user) => {
+    setSelectedUser(user)
+    setDialogMode("view")
+    setIsUserDialogOpen(true)
+  }
+
+  const handleEditUser = (user) => {
+    setSelectedUser(user)
+    setDialogMode("edit")
+    setIsUserDialogOpen(true)
+  }
+
+  const handleAddUser = () => {
+    setSelectedUser(null)
+    setDialogMode("add")
+    setIsUserDialogOpen(true)
+  }
+
+  const handleDeleteUser = (user) => {
+    setSelectedUser(user)
     setIsDeleteDialogOpen(true)
   }
 
-  const handleDeleteConfirm = () => {
-    // In a real app, you would delete the user here
-    console.log(`Deleting user with ID: ${userToDelete}`)
-    setIsDeleteDialogOpen(false)
-    setUserToDelete(null)
+  const confirmDelete = () => {
+    if (selectedUser) {
+      deleteUser(selectedUser.id, {
+        onSuccess: () => {
+          setIsDeleteDialogOpen(false)
+          setSelectedUser(null)
+        },
+      })
+    }
+  }
+
+  const handleSaveUser = async (formData) => {
+    if (dialogMode === "edit" && selectedUser) {
+      updateUser(
+        { id: selectedUser.id, userData: formData },
+        {
+          onSuccess: () => {
+            setIsUserDialogOpen(false)
+            setSelectedUser(null)
+          }
+        }
+      )
+    } else {
+      createUser(formData, {
+        onSuccess: () => {
+          setIsUserDialogOpen(false)
+        }
+      })
+    }
+  }
+
+  const handleDialogClose = () => {
+    setIsUserDialogOpen(false)
+    setSelectedUser(null)
+    setDialogMode("view")
+  }
+
+  const handleModeChange = (newMode) => {
+    setDialogMode(newMode)
   }
 
   return (
     <div className="space-y-5">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <h2 className="text-2xl font-bold tracking-tight text-gray-900">Quản lý người dùng</h2>
-        <Link href="/dashboard/users/new">
-          <Button className="bg-blue-600 hover:bg-blue-700">
-            <UserPlus className="mr-2 h-4 w-4" />
-            Thêm người dùng
-          </Button>
-        </Link>
+        <Button className="bg-blue-600 hover:bg-blue-700" onClick={handleAddUser}>
+          <Plus className="mr-2 h-4 w-4" />
+          Thêm người dùng
+        </Button>
       </div>
 
       <div className="rounded-lg border bg-white p-4 shadow-sm">
-        <div className="relative mb-4">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-          <Input
-            type="search"
-            placeholder="Tìm kiếm người dùng..."
-            className="pl-9"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
-
-        <div className="rounded-md border">
-          <Table>
-            <TableHeader className="bg-gray-50">
-              <TableRow>
-                <TableHead>ID</TableHead>
-                <TableHead>Tên</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Số điện thoại</TableHead>
-                <TableHead>Vai trò</TableHead>
-                <TableHead>Trạng thái</TableHead>
-                <TableHead className="text-right">Thao tác</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredUsers.map((user) => (
-                <TableRow key={user.id} className="hover:bg-gray-50">
-                  <TableCell className="font-medium">{user.id}</TableCell>
-                  <TableCell className="font-medium text-blue-600">{user.name}</TableCell>
-                  <TableCell>{user.email}</TableCell>
-                  <TableCell>{user.phone}</TableCell>
-                  <TableCell>
-                    <div
-                      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${
-                        user.role === "admin"
-                          ? "bg-purple-100 text-purple-800"
-                          : user.role === "staff"
-                            ? "bg-blue-100 text-blue-800"
-                            : "bg-gray-100 text-gray-800"
-                      }`}
-                    >
-                      {user.role === "admin" ? "Quản trị viên" : user.role === "staff" ? "Nhân viên" : "Khách hàng"}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div
-                      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${
-                        user.status === "active" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
-                      }`}
-                    >
-                      {user.status === "active" ? "Hoạt động" : "Bị khóa"}
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
-                      <Link href={`/dashboard/users/${user.id}`}>
-                        <Button variant="ghost" size="icon" className="text-gray-500 hover:text-blue-600">
-                          <Eye className="h-4 w-4" />
-                          <span className="sr-only">Xem chi tiết</span>
-                        </Button>
-                      </Link>
-                      <Link href={`/dashboard/users/${user.id}/edit`}>
-                        <Button variant="ghost" size="icon" className="text-gray-500 hover:text-blue-600">
-                          <Edit className="h-4 w-4" />
-                          <span className="sr-only">Chỉnh sửa</span>
-                        </Button>
-                      </Link>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleDeleteClick(user.id)}
-                        className="text-gray-500 hover:text-red-600"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                        <span className="sr-only">Xóa</span>
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+        <UserFilter
+          searchTerm={searchTerm}
+          setSearchTerm={setSearchTerm}
+          roleFilter={roleFilter}
+          setRoleFilter={setRoleFilter}
+          searchInputRef={searchInputRef}
+        />
+        <UserList
+          users={usersData?.body?.users || []}
+          total={usersData?.body?.total || 0}
+          currentPage={currentPage}
+          pageSize={pageSize}
+          onPageChange={setCurrentPage}
+          onPageSizeChange={setPageSize}
+          loading={isLoading}
+          error={error}
+          handleViewUser={handleViewUser}
+          handleEditUser={handleEditUser}
+          handleDeleteUser={handleDeleteUser}
+        />
       </div>
 
-      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Xác nhận xóa</DialogTitle>
-            <DialogDescription>
-              Bạn có chắc chắn muốn xóa người dùng này? Hành động này không thể hoàn tác.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
-              Hủy
-            </Button>
-            <Button variant="destructive" onClick={handleDeleteConfirm}>
-              Xóa
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <UserDialog
+        isOpen={isUserDialogOpen}
+        onClose={handleDialogClose}
+        mode={dialogMode}
+        user={selectedUser}
+        onSave={handleSaveUser}
+        setDialogMode={setDialogMode}
+        setIsUserDialogOpen={setIsUserDialogOpen}
+      />
+
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Xác nhận xóa</AlertDialogTitle>
+            <AlertDialogDescription>
+              Bạn có chắc chắn muốn xóa người dùng {selectedUser?.name} ? Hành động này không thể hoàn tác.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Hủy</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              className="bg-red-600 hover:bg-red-700"
+              disabled={isDeleting}
+            >
+              {isDeleting ? "Đang xóa..." : "Xóa"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

@@ -13,7 +13,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Edit, X, Image as ImageIcon } from "lucide-react"
+import { Edit, X, Image as ImageIcon, Tag, FileText, DollarSign } from "lucide-react"
 
 const initialFormData = {
   name: "",
@@ -133,7 +133,9 @@ export function ComboDialog({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4">
           {/* Left column - Image */}
           <div className="space-y-2">
+            
             <Label htmlFor="bannerUpload" className="flex items-center gap-2 text-lg font-medium">
+              <ImageIcon className="h-4 w-4" />
               Hình ảnh
             </Label>
             <div className="relative overflow-hidden rounded-md border border-gray-200 bg-gray-50 flex items-center justify-center">
@@ -177,7 +179,9 @@ export function ComboDialog({
           {/* Right column - Combo information */}
           <div className="space-y-4">
             <div className="grid gap-2 mt-4">
-              <Label htmlFor="name">Tên combo</Label>
+              <Label htmlFor="name" className="flex items-center gap-2">
+                <Tag className="h-4 w-4" /> Tên combo
+              </Label>
               <Input
                 id="name"
                 name="name"
@@ -191,7 +195,9 @@ export function ComboDialog({
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="description">Mô tả</Label>
+              <Label htmlFor="description" className="flex items-center gap-2">
+                <FileText className="h-4 w-4" /> Mô tả
+              </Label>
               <Textarea
                 id="description"
                 name="description"
@@ -206,7 +212,9 @@ export function ComboDialog({
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="price">Giá (VNĐ)</Label>
+              <Label htmlFor="price" className="flex items-center gap-2">
+                <DollarSign className="h-4 w-4" /> Giá (VNĐ)
+              </Label>
               <Input
                 id="price"
                 name="price"
