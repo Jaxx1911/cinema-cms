@@ -1,14 +1,15 @@
 "use client"
 
 import { useState } from "react"
-import { Plus, CalendarDays } from "lucide-react"
+import { Plus, CalendarDays, CheckCircle2, XCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ShowtimeDialog } from "@/components/showtimes/showtime-dialog"
-import { BatchShowtimeDialog } from "@/components/showtimes/batch-showtime-dialog"
 import { BatchScheduleDialog } from "@/components/showtimes/batch-schedule-dialog"
 import { ShowtimeFilter } from "@/components/showtimes/showtime-filter"
 import { ShowtimeList } from "@/components/showtimes/showtime-list"
 import { ShowtimeProvider } from "@/contexts/showtime-context"
+import { useCreateShowtime, useUpdateShowtime, useDeleteShowtime } from "@/hooks/use-showtime"
+import { useToast } from "@/hooks/use-toast"
 import {
   Dialog,
   DialogContent,
@@ -19,6 +20,13 @@ import {
 } from "@/components/ui/dialog"
 
 export default function ShowtimesPage() {
+  const { toast } = useToast()
+  
+  // CRUD operations
+  const { createShowtime, isLoading: isCreating } = useCreateShowtime()
+  const { updateShowtime, isLoading: isUpdating } = useUpdateShowtime()
+  const { deleteShowtime, isLoading: isDeleting } = useDeleteShowtime()
+
   // Filter states
   const [selectedMovie, setSelectedMovie] = useState("all")
   const [selectedCinema, setSelectedCinema] = useState("all")
@@ -40,27 +48,49 @@ export default function ShowtimesPage() {
   }
 
   const handleDeleteConfirm = () => {
-    // TODO: Implement delete showtime API call
-    setIsDeleteDialogOpen(false)
-    setShowtimeToDelete(null)
+    deleteShowtime(showtimeToDelete, {
+      onSuccess: () => {
+        toast({
+          title: "Thành công",
+          description: "Xóa suất chiếu thành công",
+          icon: <CheckCircle2 className="h-5 w-5 text-green-500" />,
+        })
+        setIsDeleteDialogOpen(false)
+        setShowtimeToDelete(null)
+      },
+      onError: (error) => {
+        toast({
+          title: "Lỗi",
+          description: error.message || "Có lỗi xảy ra khi xóa suất chiếu",
+          icon: <XCircle className="h-5 w-5 text-red-500" />,
+        })
+      }
+    })
   }
 
   const handleViewShowtime = (showtime) => {
+    // Reset showtime và set mode về view
     setSelectedShowtime(showtime)
     setDialogMode("view")
     setIsShowtimeDialogOpen(true)
   }
 
   const handleEditShowtime = (showtime) => {
+    // Reset showtime và set mode về edit
     setSelectedShowtime(showtime)
     setDialogMode("edit")
     setIsShowtimeDialogOpen(true)
   }
 
   const handleAddShowtime = () => {
+    // Reset showtime và set mode về add
     setSelectedShowtime(null)
     setDialogMode("add")
     setIsShowtimeDialogOpen(true)
+  }
+
+  const handleCloseDialog = () => {
+    setIsShowtimeDialogOpen(false)
   }
 
   const handleOpenBatchScheduleDialog = () => {
@@ -68,8 +98,46 @@ export default function ShowtimesPage() {
   }
 
   const handleSaveShowtime = (showtimeData) => {
-    // TODO: Implement save showtime API call
-    console.log("Save showtime:", showtimeData)
+    if (dialogMode === "add") {
+      createShowtime(showtimeData, {
+        onSuccess: () => {
+          toast({
+            title: "Thành công",
+            description: "Thêm suất chiếu mới thành công",
+            icon: <CheckCircle2 className="h-5 w-5 text-green-500" />,
+          })
+          setIsShowtimeDialogOpen(false)
+        },
+        onError: (error) => {
+          toast({
+            title: "Lỗi",
+            description: error.message || "Có lỗi xảy ra khi thêm suất chiếu",
+            icon: <XCircle className="h-5 w-5 text-red-500" />,
+          })
+        }
+      })
+    } else if (dialogMode === "edit") {
+      updateShowtime({ 
+        id: showtimeData.id, 
+        showtimeData 
+      }, {
+        onSuccess: () => {
+          toast({
+            title: "Thành công",
+            description: "Cập nhật suất chiếu thành công",
+            icon: <CheckCircle2 className="h-5 w-5 text-green-500" />,
+          })
+          setIsShowtimeDialogOpen(false)
+        },
+        onError: (error) => {
+          toast({
+            title: "Lỗi",
+            description: error.message || "Có lỗi xảy ra khi cập nhật suất chiếu",
+            icon: <XCircle className="h-5 w-5 text-red-500" />,
+          })
+        }
+      })
+    }
   }
 
   const handleSaveBatchShowtime = (showtimeData) => {
@@ -146,10 +214,12 @@ export default function ShowtimesPage() {
         {/* Showtime Dialog for View/Edit/Add */}
         <ShowtimeDialog
           isOpen={isShowtimeDialogOpen}
-          onClose={() => setIsShowtimeDialogOpen(false)}
+          onClose={handleCloseDialog}
           showtime={selectedShowtime}
           mode={dialogMode}
           onSave={handleSaveShowtime}
+          setDialogMode={setDialogMode}
+          setIsShowtimeDialogOpen={setIsShowtimeDialogOpen}
         />
         {/* Batch Schedule Dialog */}
         <BatchScheduleDialog

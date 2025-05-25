@@ -21,14 +21,16 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { cn } from "@/lib/utils"
 import { format, addDays, addMinutes, parse, isBefore, eachDayOfInterval } from "date-fns"
 import { vi } from "date-fns/locale"
-import { mockCinemas, mockScreens, mockMovies } from "@/lib/mock-data"
+import { useShowtimeData } from "@/contexts/showtime-context"
+import { useScreensByCinema } from "@/hooks/use-cinemas"
+import { useCheckShowtimeAvailable } from "@/hooks/use-showtime"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 
 export function BatchScheduleDialog({ isOpen, onClose, onSave }) {
   // State cho form
   const [selectedMovie, setSelectedMovie] = useState("")
-  const [selectedCinema, setSelectedCinema] = useState("")
+  const [selectedCinemaId, setSelectedCinemaId] = useState("")
   const [selectedScreens, setSelectedScreens] = useState([])
   const [startDate, setStartDate] = useState(new Date())
   const [endDate, setEndDate] = useState(addDays(new Date(), 7))
@@ -50,22 +52,28 @@ export function BatchScheduleDialog({ isOpen, onClose, onSave }) {
   const [availableScreens, setAvailableScreens] = useState([])
   const [activeTab, setActiveTab] = useState("schedule")
 
+  // Sử dụng context để lấy dữ liệu
+  const { newMovies, incomingMovies, cinemas, isLoading: isContextLoading } = useShowtimeData()
+  const movies = [...(newMovies || []), ...(incomingMovies || [])]
+  
+  // Lấy danh sách phòng chiếu theo rạp
+  const { screens, isLoading: isScreensLoading } = useScreensByCinema(selectedCinemaId)
+
+  const { checkShowtimeAvailable } = useCheckShowtimeAvailable()
+
   // Lấy thông tin phim đã chọn
   const selectedMovieDetails = selectedMovie
-    ? mockMovies.find((movie) => movie.id === Number.parseInt(selectedMovie))
+    ? movies.find((movie) => movie.id === selectedMovie)
     : null
 
   // Cập nhật danh sách phòng chiếu khi chọn rạp
   useEffect(() => {
-    if (selectedCinema) {
-      const screens = mockScreens.filter((screen) => screen.cinemaId === Number.parseInt(selectedCinema))
-      setAvailableScreens(screens)
+    if (selectedCinemaId) {
       setSelectedScreens([]) // Reset selected screens when cinema changes
     } else {
-      setAvailableScreens([])
       setSelectedScreens([])
     }
-  }, [selectedCinema])
+  }, [selectedCinemaId])
 
   // Cập nhật xem trước khi thay đổi các tham số
   useEffect(() => {
@@ -106,10 +114,10 @@ export function BatchScheduleDialog({ isOpen, onClose, onSave }) {
 
   // Xử lý khi chọn/bỏ chọn tất cả phòng chiếu
   const handleToggleAllScreens = () => {
-    if (selectedScreens.length === availableScreens.length) {
+    if (selectedScreens.length === screens.length) {
       setSelectedScreens([])
     } else {
-      setSelectedScreens(availableScreens.map((screen) => screen.id))
+      setSelectedScreens(screens.map((screen) => screen.id))
     }
   }
 
@@ -139,16 +147,17 @@ export function BatchScheduleDialog({ isOpen, onClose, onSave }) {
 
   // Tạo xem trước các suất chiếu
   const generatePreview = () => {
+    console.log(selectedMovieDetails)
     if (!selectedMovieDetails) return
-
+    console.log(startDate, endDate)
     const preview = []
     const days = eachDayOfInterval({ start: startDate, end: endDate })
 
     for (const day of days) {
       if (isDaySelected(day)) {
-        for (const screen of selectedScreens) {
+        for (const screenId of selectedScreens) {
           for (const slot of timeSlots) {
-            const screenObj = availableScreens.find((s) => s.id === screen)
+            const screenObj = screens.find((s) => s.id === screenId)
             if (!screenObj) continue
 
             const dateStr = format(day, "yyyy-MM-dd")
@@ -159,10 +168,10 @@ export function BatchScheduleDialog({ isOpen, onClose, onSave }) {
             const price = Number.parseInt(basePrice) + Number.parseInt(slot.priceAdjustment || "0")
 
             preview.push({
-              id: `preview-${dateStr}-${screen}-${slot.time}`,
+              id: `preview-${dateStr}-${screenId}-${slot.time}`,
               movieId: Number.parseInt(selectedMovie),
-              cinemaId: Number.parseInt(selectedCinema),
-              screenId: screen,
+              cinemaId: Number.parseInt(selectedCinemaId),
+              screenId: screenId,
               screenName: screenObj.name,
               startTime: startTime,
               endTime: endTime,
@@ -190,15 +199,11 @@ export function BatchScheduleDialog({ isOpen, onClose, onSave }) {
     }
 
     // Chuyển đổi dữ liệu xem trước thành định dạng suất chiếu thực tế
-    const newShowtimes = previewShowtimes.map((preview, index) => ({
-      id: Date.now() + index, // Tạo ID duy nhất
+    const newShowtimes = previewShowtimes.map((preview) => ({
       movieId: preview.movieId,
-      cinemaId: preview.cinemaId,
       screenId: preview.screenId,
       startTime: preview.startTime.toISOString(),
-      endTime: preview.endTime.toISOString(),
       price: preview.price,
-      availableSeats: 100, // Giá trị mặc định
     }))
 
     // Gọi callback để thông báo đã thêm suất chiếu mới
@@ -262,12 +267,16 @@ export function BatchScheduleDialog({ isOpen, onClose, onSave }) {
               <div className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="movie">Phim</Label>
-                  <Select value={selectedMovie} onValueChange={setSelectedMovie}>
-                    <SelectTrigger id="movie">
-                      <SelectValue placeholder="Chọn phim" />
+                  <Select 
+                    value={selectedMovie} 
+                    onValueChange={setSelectedMovie}
+                    disabled={isContextLoading}
+                  >
+                    <SelectTrigger id="movie" style={{ opacity: 1 }}>
+                      <SelectValue placeholder={isContextLoading ? "Đang tải..." : "Chọn phim"} />
                     </SelectTrigger>
                     <SelectContent>
-                      {mockMovies.map((movie) => (
+                      {movies.map((movie) => (
                         <SelectItem key={movie.id} value={movie.id.toString()}>
                           {movie.title} ({movie.duration} phút)
                         </SelectItem>
@@ -278,12 +287,16 @@ export function BatchScheduleDialog({ isOpen, onClose, onSave }) {
 
                 <div className="space-y-2">
                   <Label htmlFor="cinema">Rạp phim</Label>
-                  <Select value={selectedCinema} onValueChange={setSelectedCinema}>
-                    <SelectTrigger id="cinema">
-                      <SelectValue placeholder="Chọn rạp phim" />
+                  <Select 
+                    value={selectedCinemaId} 
+                    onValueChange={setSelectedCinemaId}
+                    disabled={isContextLoading}
+                  >
+                    <SelectTrigger id="cinema" style={{ opacity: 1 }}>
+                      <SelectValue placeholder={isContextLoading ? "Đang tải..." : "Chọn rạp phim"} />
                     </SelectTrigger>
                     <SelectContent>
-                      {mockCinemas.map((cinema) => (
+                      {cinemas.map((cinema) => (
                         <SelectItem key={cinema.id} value={cinema.id.toString()}>
                           {cinema.name}
                         </SelectItem>
@@ -295,15 +308,17 @@ export function BatchScheduleDialog({ isOpen, onClose, onSave }) {
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <Label>Phòng chiếu</Label>
-                    {availableScreens.length > 0 && (
+                    {screens.length > 0 && !isScreensLoading && (
                       <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={handleToggleAllScreens}>
-                        {selectedScreens.length === availableScreens.length ? "Bỏ chọn tất cả" : "Chọn tất cả"}
+                        {selectedScreens.length === screens.length ? "Bỏ chọn tất cả" : "Chọn tất cả"}
                       </Button>
                     )}
                   </div>
-                  {availableScreens.length > 0 ? (
+                  {isScreensLoading ? (
+                    <div className="text-sm text-gray-500 italic">Đang tải phòng chiếu...</div>
+                  ) : screens.length > 0 ? (
                     <div className="grid grid-cols-2 gap-2 border rounded-md p-3 max-h-40 overflow-y-auto">
-                      {availableScreens.map((screen) => (
+                      {screens.sort((a, b) => a.name.localeCompare(b.name)).map((screen) => (
                         <div key={screen.id} className="flex items-center space-x-2">
                           <Checkbox
                             id={`screen-${screen.id}`}
@@ -333,6 +348,7 @@ export function BatchScheduleDialog({ isOpen, onClose, onSave }) {
                     onChange={(e) => setBasePrice(e.target.value)}
                     min="0"
                     step="10000"
+                    style={{ opacity: 1 }}
                   />
                 </div>
               </div>
@@ -341,7 +357,7 @@ export function BatchScheduleDialog({ isOpen, onClose, onSave }) {
                 <div className="space-y-2">
                   <Label>Loại lịch trình</Label>
                   <Select value={scheduleType} onValueChange={setScheduleType}>
-                    <SelectTrigger>
+                    <SelectTrigger style={{ opacity: 1 }}>
                       <SelectValue placeholder="Chọn loại lịch trình" />
                     </SelectTrigger>
                     <SelectContent>
@@ -455,7 +471,7 @@ export function BatchScheduleDialog({ isOpen, onClose, onSave }) {
                     <Label htmlFor="startDate">Ngày bắt đầu</Label>
                     <Popover>
                       <PopoverTrigger asChild>
-                        <Button variant="outline" className={cn("w-full justify-start text-left font-normal")}>
+                        <Button variant="outline" className={cn("w-full justify-start text-left font-normal")} style={{ opacity: 1 }}>
                           <Calendar className="mr-2 h-4 w-4" />
                           {format(startDate, "dd/MM/yyyy", { locale: vi })}
                         </Button>
@@ -480,7 +496,7 @@ export function BatchScheduleDialog({ isOpen, onClose, onSave }) {
                     <Label htmlFor="endDate">Ngày kết thúc</Label>
                     <Popover>
                       <PopoverTrigger asChild>
-                        <Button variant="outline" className={cn("w-full justify-start text-left font-normal")}>
+                        <Button variant="outline" className={cn("w-full justify-start text-left font-normal")} style={{ opacity: 1 }}>
                           <Calendar className="mr-2 h-4 w-4" />
                           {format(endDate, "dd/MM/yyyy", { locale: vi })}
                         </Button>
@@ -520,6 +536,7 @@ export function BatchScheduleDialog({ isOpen, onClose, onSave }) {
                         value={slot.time}
                         onChange={(e) => updateTimeSlot(index, "time", e.target.value)}
                         className="h-9"
+                        style={{ opacity: 1 }}
                       />
                     </div>
                     <div className="flex-1">
@@ -533,6 +550,7 @@ export function BatchScheduleDialog({ isOpen, onClose, onSave }) {
                         onChange={(e) => updateTimeSlot(index, "priceAdjustment", e.target.value)}
                         className="h-9"
                         step="10000"
+                        style={{ opacity: 1 }}
                       />
                     </div>
                     <div className="flex items-end">

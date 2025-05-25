@@ -20,8 +20,7 @@ export function ShowtimeFilter({
 }) {
   // Get filter data from context
   const { newMovies, incomingMovies, cinemas, screens, isLoading } = useShowtimeData()
-  console.log(newMovies)
-  console.log(incomingMovies)
+    
   // Reset screen selection when cinema changes
   useEffect(() => {
     setSelectedScreen("all")
