@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { ArrowLeft, Edit, Plus, Phone, Clock, MapPin } from "lucide-react";
+import { ArrowLeft, Edit, Plus, Phone, Clock, MapPin, Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -19,7 +19,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { RoomsTable } from "@/components/cinemas/rooms-table";
+import { RoomsTable } from "@/components/rooms/rooms-list";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -148,7 +148,10 @@ export function CinemaDialog({
             <div className="space-y-4">
               <div className="grid grid-cols-5 gap-4">
                 <div className="space-y-2 col-span-4">
-                  <Label htmlFor="name">Tên rạp</Label>
+                  <div className="flex items-center gap-2">
+                    <Building2 className="h-5 w-5 text-muted-foreground" />
+                    <Label htmlFor="name">Tên rạp</Label>
+                  </div>
                   <Input
                     id="name"
                     name="name"
@@ -178,7 +181,10 @@ export function CinemaDialog({
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="address">Địa chỉ</Label>
+                <div className="flex items-center gap-2">
+                  <MapPin className="h-5 w-5 text-muted-foreground" />
+                  <Label htmlFor="address">Địa chỉ</Label>
+                </div>
                 <Input
                   id="address"
                   name="address"
@@ -190,7 +196,10 @@ export function CinemaDialog({
               </div>
               <div className="grid grid-cols-4 gap-4">
                 <div className="space-y-2">
-                  <Label>Giờ mở cửa</Label>
+                  <div className="flex items-center gap-2">
+                    <Clock className="h-5 w-5 text-muted-foreground" />
+                    <Label>Giờ mở cửa</Label>
+                  </div>
                   <div className="flex gap-2">
                     <Select
                       value={formData.opening_hour?.split(":")[0] || ""}
@@ -247,7 +256,10 @@ export function CinemaDialog({
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label>Giờ đóng cửa</Label>
+                  <div className="flex items-center gap-2">
+                    <Clock className="h-5 w-5 text-muted-foreground" />
+                    <Label>Giờ đóng cửa</Label>
+                  </div>
                   <div className="flex gap-2">
                     <Select
                       value={formData.closing_hour?.split(":")[0] || ""}
@@ -304,7 +316,10 @@ export function CinemaDialog({
                   </div>
                 </div>
                 <div className="space-y-2 col-span-2">
-                  <Label htmlFor="phone">Số điện thoại</Label>
+                  <div className="flex items-center gap-2">
+                    <Phone className="h-5 w-5 text-muted-foreground" />
+                    <Label htmlFor="phone">Số điện thoại</Label>
+                  </div>
                   <Input
                     id="phone"
                     name="phone"
@@ -344,7 +359,10 @@ export function CinemaDialog({
             <div className="space-y-4">
               <div className="grid grid-cols-5 gap-4">
                 <div className="space-y-2 col-span-4">
-                  <Label htmlFor="name">Tên rạp</Label>
+                  <div className="flex items-center gap-2">
+                    <Building2 className="h-5 w-5 text-muted-foreground" />
+                    <Label htmlFor="name">Tên rạp</Label>
+                  </div>
                   <Input
                     id="name"
                     name="name"
@@ -374,7 +392,10 @@ export function CinemaDialog({
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="address">Địa chỉ</Label>
+                <div className="flex items-center gap-2">
+                  <MapPin className="h-5 w-5 text-muted-foreground" />
+                  <Label htmlFor="address">Địa chỉ</Label>
+                </div>
                 <Input
                   id="address"
                   name="address"
@@ -386,7 +407,10 @@ export function CinemaDialog({
               </div>
               <div className="grid grid-cols-4 gap-4">
                 <div className="space-y-2">
-                  <Label>Giờ mở cửa</Label>
+                  <div className="flex items-center gap-2">
+                    <Clock className="h-5 w-5 text-muted-foreground" />
+                    <Label>Giờ mở cửa</Label>
+                  </div>
                   <div className="flex gap-2">
                     <Select
                       value={formData.opening_hour?.split(":")[0] || ""}
@@ -443,7 +467,10 @@ export function CinemaDialog({
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label>Giờ đóng cửa</Label>
+                  <div className="flex items-center gap-2">
+                    <Clock className="h-5 w-5 text-muted-foreground" />
+                    <Label>Giờ đóng cửa</Label>
+                  </div>
                   <div className="flex gap-2">
                     <Select
                       value={formData.closing_hour?.split(":")[0] || ""}
@@ -500,7 +527,10 @@ export function CinemaDialog({
                   </div>
                 </div>
                 <div className="space-y-2 col-span-2">
-                  <Label htmlFor="phone">Số điện thoại</Label>
+                  <div className="flex items-center gap-2">
+                    <Phone className="h-5 w-5 text-muted-foreground" />
+                    <Label htmlFor="phone">Số điện thoại</Label>
+                  </div>
                   <Input
                     id="phone"
                     name="phone"
@@ -517,7 +547,9 @@ export function CinemaDialog({
               <Button type="button" variant="outline" onClick={handleClose}>
                 Hủy
               </Button>
-              <Button type="submit">Lưu thay đổi </Button>
+              <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
+                Lưu thay đổi
+              </Button>
             </DialogFooter>
           </form>
         </DialogContent>

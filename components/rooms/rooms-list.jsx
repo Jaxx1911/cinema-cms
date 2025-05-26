@@ -1,8 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Edit, Trash2, Eye, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useGetSeatsByRoomId } from "@/hooks/use-seat";
+import { useGetRooms, useCreateRoom, useUpdateRoom } from "@/hooks/use-room";
+
 import {
   Table,
   TableBody,
@@ -22,13 +25,46 @@ import {
 import { RoomDialog } from "./room-dialog";
 import { toast } from "@/components/ui/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { CheckCircle2, XCircle } from "lucide-react";
 
-export function RoomsTable({ rooms, cinemaId }) {
+function generateAllSeats(rowCount, colCount, vipArea) {
+  const seats = [];
+  const startChar = "A".charCodeAt(0);
+  for (let row = 0; row < rowCount; row++) {
+    const rowChar = String.fromCharCode(startChar + row);
+    for (let col = 1; col <= colCount; col++) {
+      let type = "standard";
+      if (
+        vipArea &&
+        rowChar >= vipArea.vip_row_start &&
+        rowChar <= vipArea.vip_row_end &&
+        col >= Number(vipArea.vip_col_start) &&
+        col <= Number(vipArea.vip_col_end)
+      ) {
+        type = "VIP";
+      }
+      seats.push({
+        row_number: rowChar,
+        seat_number: col,
+        type,
+      });
+    }
+  }
+  return seats;
+}
+
+export function RoomsList({ cinemaId }) {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [roomToDelete, setRoomToDelete] = useState(null);
   const [isRoomDialogOpen, setIsRoomDialogOpen] = useState(false);
   const [selectedRoom, setSelectedRoom] = useState(null);
   const [dialogMode, setDialogMode] = useState("view");
+  const [seatsFromApi, setSeatsFromApi] = useState([]);
+
+  const { mutate: createRoom, isLoading: isCreating } = useCreateRoom();
+  const { mutate: updateRoom, isLoading: isUpdating } = useUpdateRoom();
+  const { data: rooms, isLoading } = useGetRooms(cinemaId);
+  const { data, isLoading: seatsLoading, error } = useGetSeatsByRoomId(selectedRoom?.id);
 
   const handleDeleteClick = (id) => {
     setRoomToDelete(id);
@@ -36,7 +72,6 @@ export function RoomsTable({ rooms, cinemaId }) {
   };
 
   const handleDeleteConfirm = () => {
-    console.log(`Deleting room with ID: ${roomToDelete}`);
     setIsDeleteDialogOpen(false);
     setRoomToDelete(null);
   };
@@ -59,66 +94,95 @@ export function RoomsTable({ rooms, cinemaId }) {
     setIsRoomDialogOpen(true);
   };
 
-  const buildRoomFormData = (roomData, includeCinemaId = false) => {
-    const formData = new FormData();
-    formData.append("name", roomData.name);
-    formData.append("capacity", roomData.capacity);
-    formData.append("type", roomData.type);
-    formData.append("row_count", roomData.rows);
-    formData.append("column_count", roomData.columns);
-    formData.append("is_active", roomData.is_active);
-    if (includeCinemaId) {
-      formData.append("cinema_id", cinemaId);
-    }
-    return formData;
-  };
-  
-  const handleSaveRoom = async (roomData) => {
-    const isAdd = dialogMode === "add";
-    const url = isAdd
-      ? "/api/rooms"
-      : `/api/rooms/${roomData.id}`;
-    const method = isAdd ? "PUT" : "POST";
-    const formData = buildRoomFormData(roomData, isAdd);
-  
-    try {
-      const response = await fetch(url, {
-        method,
-        body: formData,
-      });
-  
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Lỗi không xác định");
+  const handleSaveRoom = (room) => {
+    console.log("room khi update:", room);
+    if (dialogMode === "add") {
+      const payload = {
+        ...room,
+        row_count: Number(room.row_count),
+        column_count: Number(room.column_count),
+        capacity: Number(room.row_count) * Number(room.column_count),
+        cinema_id: cinemaId,
+        seats: generateAllSeats(
+          Number(room.row_count),
+          Number(room.column_count),
+          {
+            vip_row_start: room.vip_row_start?.toUpperCase(),
+            vip_row_end: room.vip_row_end?.toUpperCase(),
+            vip_col_start: Number(room.vip_col_start),
+            vip_col_end: Number(room.vip_col_end),
+          }
+        ),
       }
-  
-      const result = await response.json();
-  
-      toast({
-        title: "Thành công",
-        description: isAdd
-          ? "Thêm phòng chiếu mới thành công"
-          : "Cập nhật phòng chiếu thành công",
-        variant: "default",
+      console.log("Payload gửi lên:", payload);
+      createRoom(payload, {
+        onSuccess: (data) => {
+          toast({
+            title: "Thành công",
+            description: "Thêm phòng chiếu thành công",
+            variant: "default",
+            icon: <CheckCircle2 className="h-5 w-5 text-green-500" />,
+          });
+          setIsRoomDialogOpen(false);
+        },
+        onError: (error) => {
+          toast({
+            title: "Lỗi",
+            description: error.message || "Có lỗi xảy ra khi thêm phòng chiếu",
+            variant: "destructive",
+            icon: <XCircle className="h-5 w-5 text-red-500" />,
+          });
+        },
       });
-  
-      setIsRoomDialogOpen(false);
-  
-      // Cập nhật danh sách phòng chiếu (có thể refetch hoặc reload)
-      window.location.reload(); // nếu chưa có refetch API
-    } catch (error) {
-      toast({
-        title: "Lỗi",
-        description:
-          error.message ||
-          (isAdd
-            ? "Có lỗi xảy ra khi thêm phòng chiếu"
-            : "Có lỗi xảy ra khi cập nhật phòng chiếu"),
-        variant: "destructive",
+    } else if (dialogMode === "edit") {
+      const updatedSeats = generateAllSeats(
+        Number(room.row_count),
+        Number(room.column_count),
+        {
+          vip_row_start: room.vip_row_start?.toUpperCase(),
+          vip_row_end: room.vip_row_end?.toUpperCase(),
+          vip_col_start: Number(room.vip_col_start),
+          vip_col_end: Number(room.vip_col_end),
+        }
+      ).map(seat => {
+        const oldSeat = data.find(
+          s => s.row_number === seat.row_number && s.seat_number === seat.seat_number
+        );
+        return {
+          id: oldSeat ? oldSeat.id : undefined,
+          row_number: seat.row_number,
+          seat_number: seat.seat_number,
+          type: seat.type,
+        };
+      });
+      const payload = {
+        name: room.name,
+        type: room.type,
+        is_active: room.is_active,
+        seats: updatedSeats,
+      };
+      updateRoom({ id: room.id, roomData: payload }, {
+        onSuccess: (data) => {
+          toast({
+            title: "Thành công",
+            description: "Cập nhật phòng chiếu thành công",
+            variant: "default",
+            icon: <CheckCircle2 className="h-5 w-5 text-green-500" />,
+          });
+          setIsRoomDialogOpen(false);
+        },
+        onError: (error) => {
+          toast({
+            title: "Lỗi",
+            description: error.message || "Có lỗi xảy ra khi cập nhật phòng chiếu",
+            variant: "destructive",
+            icon: <XCircle className="h-5 w-5 text-red-500" />,
+          });
+        },
       });
     }
   };
-  
+
   return (
     <>
       <Tabs defaultValue="rooms" className="space-y-4">

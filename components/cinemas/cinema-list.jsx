@@ -12,13 +12,15 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useGetCinemas } from "@/hooks/use-cinema";
+import { useGetCinemas} from "@/hooks/use-cinema";
 import { useRouter } from "next/navigation";
+import { useCreateRoom } from "@/hooks/use-room";
 
 export default function CinemaList({ handleViewCinema, handleDeleteClick }) {
   const { data: cinemas, isLoading, error } = useGetCinemas();
   const [searchTerm, setSearchTerm] = useState("");
   const router = useRouter();
+  
 
   return (
     <div className="rounded-lg border bg-white p-4 shadow-sm">

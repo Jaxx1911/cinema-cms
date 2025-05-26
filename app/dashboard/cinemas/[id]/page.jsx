@@ -1,6 +1,6 @@
 "use client";
-
-import { use } from "react";
+import axios from "axios";
+import { use, useState } from "react";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -14,22 +14,11 @@ import {
   Building2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { RoomsTable } from "@/components/cinemas/rooms-table";
-import { useGetCinemas, useGetCinemaById, useUpdateCinema } from "@/hooks/use-cinema";
-import { useGetSeatsByRoomId, useGetRoomById , useGetRooms } from "@/hooks/use-room";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useParams } from "next/navigation";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { RoomsList } from "@/components/rooms/rooms-list";
+import { useGetCinemaById, useUpdateCinema } from "@/hooks/use-cinema";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useParams,useRouter } from "next/navigation";
 import { CinemaDialog } from "@/components/cinemas/cinema-dialog";
-import axios from "axios";
 import { toast } from "@/components/ui/use-toast";
 
 export default function CinemaDetailsPage() {
@@ -245,7 +234,7 @@ export default function CinemaDetailsPage() {
                 </dl>
               </CardContent>
             </Card>
-            <RoomsTable rooms={cinema?.rooms || []} cinemaId={cinema?.id} />
+            <RoomsList rooms={cinema?.rooms || []} cinemaId={cinema?.id} />
           </div>
         </Card>
       </div>
