@@ -39,6 +39,20 @@ export const checkShowtimeAvailable = async (movieId, roomId, startTime, showtim
   return response.data
 }
 
+export const checkAllShowtimeAvailable = async (showtimes) => {
+  const payload = {
+    showtimes: showtimes.map(showtime => ({
+      movie_id: showtime.movieId,
+      room_id: showtime.screenId,
+      start_time: `${String(showtime.startTime.getDate()).padStart(2, '0')}-${String(showtime.startTime.getMonth() + 1).padStart(2, '0')}-${showtime.startTime.getFullYear()} ${String(showtime.startTime.getHours()).padStart(2, '0')}:${String(showtime.startTime.getMinutes()).padStart(2, '0')}`,
+    }))
+  }
+
+
+  const response = await baseQuery.post(`/showtime/check-availabilities`, payload)
+  return response.data
+}
+
 export const createShowtime = async (showtimeData) => {
   // Format start_time và end_time thành dd-MM-yyyy hh:mm
   const startDate = new Date(showtimeData.startTime);
@@ -57,6 +71,22 @@ export const createShowtime = async (showtimeData) => {
   const response = await baseQuery.post('/showtime', payload)
   return response.data
 }
+
+
+export const createShowtimes = async (showtimesData) => {
+  const payload = {
+    showtimes: showtimesData.map(showtime => ({
+      movie_id: showtime.movieId,
+      room_id: showtime.screenId,
+      start_time: `${String(showtime.startTime.getDate()).padStart(2, '0')}-${String(showtime.startTime.getMonth() + 1).padStart(2, '0')}-${showtime.startTime.getFullYear()} ${String(showtime.startTime.getHours()).padStart(2, '0')}:${String(showtime.startTime.getMinutes()).padStart(2, '0')}`,
+      price: showtime.price,  
+    }))
+  }
+
+  const response = await baseQuery.post('/showtime/batch', payload)
+  return response.data
+}
+
 
 export const updateShowtime = async (id, showtimeData) => {
   // Format start_time và end_time thành dd-MM-yyyy hh:mm

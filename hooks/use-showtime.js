@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { getShowtimes, getShowtimeById, checkShowtimeAvailable, createShowtime, updateShowtime, deleteShowtime } from "@/services/showtime-service"
+import { getShowtimes, getShowtimeById, checkShowtimeAvailable, createShowtime, updateShowtime, deleteShowtime, checkAllShowtimeAvailable, createShowtimes } from "@/services/showtime-service"
 
 export const useGetShowtimes = (movieId, cinemaId, screenId, startDate, endDate) => {
   const { data, isLoading, error } = useQuery({
@@ -40,6 +40,18 @@ export const useCheckShowtimeAvailable = () => {
   }
 }
 
+export const useCheckAllShowtimeAvailable = () => {
+  const { mutate, isLoading, error } = useMutation({
+    mutationFn: ({ showtimes }) => checkAllShowtimeAvailable(showtimes),
+  })
+  
+  return {
+    checkAllShowtimeAvailable: mutate,
+    isLoading,
+    error: error?.message || null,
+  }
+}
+
 export const useCreateShowtime = () => {
   const queryClient = useQueryClient()
   
@@ -57,6 +69,20 @@ export const useCreateShowtime = () => {
     error: error?.message || null,
   }
 }
+
+export const useCreateShowtimes = () => {
+  const { mutate, isLoading, error } = useMutation({
+    mutationFn: (showtimesData) => createShowtimes(showtimesData),
+  })
+  
+  return {
+    createShowtimes: mutate,
+    isLoading,
+    error: error?.message || null,
+  }
+}
+
+
 
 export const useUpdateShowtime = () => {
   const queryClient = useQueryClient()

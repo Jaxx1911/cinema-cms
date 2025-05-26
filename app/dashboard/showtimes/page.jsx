@@ -8,7 +8,7 @@ import { BatchScheduleDialog } from "@/components/showtimes/batch-schedule-dialo
 import { ShowtimeFilter } from "@/components/showtimes/showtime-filter"
 import { ShowtimeList } from "@/components/showtimes/showtime-list"
 import { ShowtimeProvider } from "@/contexts/showtime-context"
-import { useCreateShowtime, useUpdateShowtime, useDeleteShowtime } from "@/hooks/use-showtime"
+import { useCreateShowtime, useUpdateShowtime, useDeleteShowtime, useCreateShowtimes } from "@/hooks/use-showtime"
 import { useToast } from "@/hooks/use-toast"
 import {
   Dialog,
@@ -26,7 +26,7 @@ export default function ShowtimesPage() {
   const { createShowtime, isLoading: isCreating } = useCreateShowtime()
   const { updateShowtime, isLoading: isUpdating } = useUpdateShowtime()
   const { deleteShowtime, isLoading: isDeleting } = useDeleteShowtime()
-
+  const { createShowtimes, isLoading: isCreatingShowtimes } = useCreateShowtimes()
   // Filter states
   const [selectedMovie, setSelectedMovie] = useState("all")
   const [selectedCinema, setSelectedCinema] = useState("all")
@@ -141,8 +141,23 @@ export default function ShowtimesPage() {
   }
 
   const handleSaveBatchShowtime = (showtimeData) => {
-    // TODO: Implement save batch showtime API call
-    console.log("Save batch showtime:", showtimeData)
+    createShowtimes(showtimeData, {
+      onSuccess: () => {
+        toast({
+          title: "Thành công",
+          description: "Thêm suất chiếu mới thành công",
+          icon: <CheckCircle2 className="h-5 w-5 text-green-500" />,
+        })
+        setIsBatchScheduleDialogOpen(false)
+      },
+      onError: (error) => {
+        toast({
+          title: "Lỗi",
+          description: error.message || "Có lỗi xảy ra khi thêm suất chiếu",
+          icon: <XCircle className="h-5 w-5 text-red-500" />,
+        })
+      }
+    })
   }
 
   return (
