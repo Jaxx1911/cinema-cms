@@ -16,7 +16,7 @@ import { useUser } from "@/hooks/use-auth"
 
 export function AuthButton() {
   const { token, logout, openLoginDialog } = useAuth()
-  const { user } = useUser()
+  const { user, error } = useUser()
   if (token) {
     return (
       <DropdownMenu>
@@ -54,8 +54,8 @@ export function AuthButton() {
         </DropdownMenuContent>
       </DropdownMenu>
     )
-  }
-
+  } 
+ 
   return (
     <Button variant="outline" size="sm" onClick={openLoginDialog}>
       <LogIn className="mr-2 h-4 w-4" />
