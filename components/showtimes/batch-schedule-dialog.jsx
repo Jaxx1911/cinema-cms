@@ -41,7 +41,7 @@ export function BatchScheduleDialog({ isOpen, onClose, onSave }) {
     saturday: true,
     sunday: true,
   })
-  const [timeSlots, setTimeSlots] = useState([{ start: "10:00", end: null, priceAdjustment: "0" }])
+  const [timeSlots, setTimeSlots] = useState([{ start: "10:00", end: '', priceAdjustment: "0" }])
   const [previewShowtimes, setPreviewShowtimes] = useState([])
   const [activeTab, setActiveTab] = useState("schedule")
   const [checkingStatus, setCheckingStatus] = useState({}) // Store checking status for each showtime

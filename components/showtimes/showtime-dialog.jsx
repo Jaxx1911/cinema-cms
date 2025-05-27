@@ -268,7 +268,7 @@ export function ShowtimeDialog({
                   disabled={isViewMode || isLoading}
                   required
                 >
-                  <SelectTrigger id="movieId" style={{ opacity: 1 }}>
+                  <SelectTrigger id="movieId" style={{ opacity: 1 }} disabled={isViewMode || isEditMode}>
                     <SelectValue placeholder={isLoading ? "Đang tải..." : "Chọn phim"} />
                   </SelectTrigger>
                   <SelectContent >
@@ -288,7 +288,7 @@ export function ShowtimeDialog({
                   disabled={isViewMode || isContextLoading}
                   required
                 >
-                  <SelectTrigger id="cinemaId" style={{ opacity: 1 }}>
+                  <SelectTrigger id="cinemaId" style={{ opacity: 1 }} disabled={isViewMode || isEditMode}>
                     <SelectValue placeholder={isContextLoading ? "Đang tải..." : "Chọn rạp phim"} />
                   </SelectTrigger>
                   <SelectContent>

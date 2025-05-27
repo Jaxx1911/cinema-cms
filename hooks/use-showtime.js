@@ -1,16 +1,17 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { getShowtimes, getShowtimeById, checkShowtimeAvailable, createShowtime, updateShowtime, deleteShowtime, checkAllShowtimeAvailable, createShowtimes } from "@/services/showtime-service"
+import { getShowtimes, getShowtimeById, checkShowtimeAvailable, createShowtime, updateShowtime, deleteShowtime, checkAllShowtimeAvailable, createShowtimes, checkShowtimeAvailableToUpdate } from "@/services/showtime-service"
 
-export const useGetShowtimes = (movieId, cinemaId, screenId, startDate, endDate) => {
-  const { data, isLoading, error } = useQuery({
-    queryKey: ["showtimes", movieId, cinemaId, screenId, startDate, endDate],
-    queryFn: () => getShowtimes(movieId, cinemaId, screenId, startDate, endDate),
+export const useGetShowtimes = (movieId, cinemaId, screenId, startDate, endDate, page = 1, limit = 10) => {
+  const { data, isLoading, error, refetch } = useQuery({
+    queryKey: ["showtimes", movieId, cinemaId, screenId, startDate, endDate, page, limit],
+    queryFn: () => getShowtimes(movieId, cinemaId, screenId, startDate, endDate, page, limit),
     enabled: !!cinemaId,
   })
   return {
     data: data?.body || null,
     isLoading: isLoading,
     error: error?.message || null,
+    refetch: refetch,
   }
 }
 

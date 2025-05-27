@@ -9,8 +9,18 @@ const baseQuery = axios.create({
   },
 })
 
-export const getShowtimes = async (movieId, cinemaId, screenId, startDate, endDate) => {
-  const response = await baseQuery.get("/showtime/list", { params: { movie_id: movieId, cinema_id: cinemaId, screen_id: screenId, from_date: startDate, to_date: endDate } })
+export const getShowtimes = async (movieId, cinemaId, screenId, startDate, endDate, page = 1, limit = 10) => {
+  const response = await baseQuery.get("/showtime/list", { 
+    params: { 
+      movie_id: movieId, 
+      cinema_id: cinemaId, 
+      screen_id: screenId, 
+      from_date: startDate, 
+      to_date: endDate,
+      page: page,
+      limit: limit
+    } 
+  })
   return response.data
 }
 
@@ -32,7 +42,7 @@ export const checkShowtimeAvailable = async (movieId, roomId, startTime, showtim
   
   // Add showtime_id if it exists (for edit mode)
   if (showtimeId) {
-    payload.showtime_id = showtimeId
+    payload.id = showtimeId
   }
   
   const response = await baseQuery.post(`/showtime/check-availability`, payload)
