@@ -411,6 +411,7 @@ export function RoomDialog({
                         type="text"
                         value={formData.vip_row_start ?? ""}
                         onChange={handleChange}
+                        placeholder="Ví dụ: C"
                         className="h-12 text-base"
                       />
                     </div>
