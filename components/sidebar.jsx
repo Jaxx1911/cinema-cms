@@ -108,12 +108,12 @@ export function Sidebar() {
     <>
       <div className="px-3 py-4">
         <div className="mb-8 flex items-center px-2">
-          <h1 className="text-xl font-bold text-gray-800">Cinema Admin</h1>
+          <h1 className="text-xl font-bold text-blue-700">Hera Cinema Admin</h1>
         </div>
         <div className="space-y-1">
         {navItems.map((item, index) => {
             const isActive = item.href
-              ? pathname === item.href || pathname.endsWith(`${item.href}/`)
+              ? (pathname === item.href || pathname.startsWith(`${item.href}/`))
               : item.submenu &&
                 item.submenu.some((subItem) => pathname === subItem.href || pathname.startsWith(`${subItem.href}/`))
 
