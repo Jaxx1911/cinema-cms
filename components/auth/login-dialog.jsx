@@ -53,10 +53,7 @@ export function LoginDialog({ isOpen, onClose, onLogin, forceOpen = false }) {
     }
     if (!formData.password) {
       newErrors.password = "Vui lòng nhập mật khẩu"
-    } else if (formData.password.length < 6) {
-      newErrors.password = "Mật khẩu phải có ít nhất 6 ký tự"
     }
-
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
@@ -78,13 +75,6 @@ export function LoginDialog({ isOpen, onClose, onLogin, forceOpen = false }) {
           <DialogTitle className="text-center text-xl">Đăng nhập</DialogTitle>
           <DialogDescription className="text-center">Đăng nhập vào hệ thống quản lý rạp chiếu phim</DialogDescription>
         </DialogHeader>
-
-        {error && (
-          <Alert variant="destructive" className="bg-red-50 text-red-800 border-red-200">
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        )}
-
         <form onSubmit={handleSubmit} className="space-y-4 py-4">
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>

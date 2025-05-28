@@ -26,7 +26,6 @@ export function useLogin() {
         title: "Thành công",
         icon: <CheckCircle2 className="h-4 w-4" color="green" />,
         description: "Đăng nhập thành công",
-        variant: "default",
       })
 
       router.refresh()
@@ -49,7 +48,6 @@ export function useLogin() {
       toast({
         title: "Lỗi",
         description: description,
-        variant: "destructive",
         icon: <XCircle className="h-5 w-5 text-red-500" />,
       })
     },
