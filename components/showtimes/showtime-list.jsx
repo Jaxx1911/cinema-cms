@@ -40,7 +40,9 @@ export function ShowtimeList({
   const totalShowtimes = showtimesData?.total_count || 0
 
   useEffect(() => {
-    refetch()
+    if (selectedCinema !== "all") {
+      refetch()
+    }
   }, [currentPage, selectedMovie, selectedCinema, selectedScreen, startDate, endDate, refetch])
 
   useEffect(() => {
