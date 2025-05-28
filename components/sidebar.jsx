@@ -18,6 +18,7 @@ import {
   ChevronRight,
   Popcorn,
   HandCoins,
+  Receipt,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
@@ -79,14 +80,9 @@ const navItems = [
     ],
   },
   {
-    title: "Vé",
-    href: "/dashboard/tickets",
-    icon: Ticket,
-  },
-  {
-    title: "Cài đặt",
-    href: "/dashboard/settings",
-    icon: Settings,
+    title: "Hóa đơn",
+    href: "/dashboard/invoices",
+    icon: Receipt,
   },
 ]
 

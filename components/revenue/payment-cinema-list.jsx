@@ -30,27 +30,25 @@ export function CinemaInvoicesDialog({ isOpen, onClose, cinema, startDate, endDa
   const invoices = useMemo(() => {
     if (!paymentsData?.body) return []
     
-    return paymentsData.body.map((payment, index) => ({
-      date: format(new Date(payment.date), "dd/MM/yyyy", { locale: vi }),
-      time: format(new Date(payment.date), "HH:mm", { locale: vi }),
-      customer: payment.user_name,
-      movie: payment.movie_name,
-      ticketCount: payment.tickets.length,
-      ticketPrice: payment.total_amount - payment.total_combo_amount,
-      concessionAmount: payment.total_combo_amount,
-      totalAmount: payment.total_amount,
-      paymentMethod: "Thanh toán online", // API không có thông tin này
-      status: payment.status === "success" ? "Đã thanh toán" : "Đã hủy",
-      screen: payment.room_name,
-      seats: payment.tickets.join(", "),
+    return paymentsData.body.map((payment) => ({
+      id: payment.id,
+      transactionId: payment.transaction_id,
+      date: format(new Date(payment.payment_time), "dd/MM/yyyy", { locale: vi }),
+      time: format(new Date(payment.payment_time), "HH:mm", { locale: vi }),
+      customer: payment.customer.name,
+      ticketPrice: payment.total_ticket_price,
+      concessionAmount: payment.total_combo_price,
+      discount: payment.discount ? `${payment.discount.code} (-${payment.discount.percentage}%)` : "-:-",
+      totalAmount: payment.amount,
+      status: payment.status,
     }))
-  }, [paymentsData, cinema?.id])
+  }, [paymentsData])
 
   const filteredInvoices = useMemo(() => {
     return invoices.filter((invoice) => {
       const matchesSearch =
         invoice.customer.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        invoice.movie.toLowerCase().includes(searchTerm.toLowerCase())
+        invoice.transactionId.toLowerCase().includes(searchTerm.toLowerCase())
 
       const matchesStatus = statusFilter === "all" || invoice.status === statusFilter
 
@@ -72,14 +70,27 @@ export function CinemaInvoicesDialog({ isOpen, onClose, cinema, startDate, endDa
 
   const getStatusColor = (status) => {
     switch (status) {
-      case "Đã thanh toán":
+      case "success":
         return "bg-green-100 text-green-800"
-      case "Đã hủy":
+      case "failed":
         return "bg-red-100 text-red-800"
-      case "Hoàn tiền":
+      case "pending":
         return "bg-yellow-100 text-yellow-800"
       default:
         return "bg-gray-100 text-gray-800"
+    }
+  }
+
+  const getStatusText = (status) => {
+    switch (status) {
+      case "success":
+        return "Thành công"
+      case "failed":
+        return "Thất bại"
+      case "pending":
+        return "Đang xử lý"
+      default:
+        return status
     }
   }
 
@@ -134,7 +145,7 @@ export function CinemaInvoicesDialog({ isOpen, onClose, cinema, startDate, endDa
                     <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
                     <Input
                       type="search"
-                      placeholder="Tìm kiếm hóa đơn, khách hàng, phim..."
+                      placeholder="Tìm kiếm mã giao dịch, khách hàng..."
                       className="pl-9"
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
@@ -149,6 +160,7 @@ export function CinemaInvoicesDialog({ isOpen, onClose, cinema, startDate, endDa
                       <SelectItem value="all">Tất cả</SelectItem>
                       <SelectItem value="success">Thành công</SelectItem>
                       <SelectItem value="failed">Thất bại</SelectItem>
+                      <SelectItem value="pending">Đang xử lý</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -160,27 +172,27 @@ export function CinemaInvoicesDialog({ isOpen, onClose, cinema, startDate, endDa
                   <Table>
                     <TableHeader className="bg-gray-50 sticky top-0">
                       <TableRow>
-                        <TableHead>Ngày/Giờ</TableHead>
-                        <TableHead>Khách hàng</TableHead>
-                        <TableHead>Phim</TableHead>
-                        <TableHead>Phòng/Ghế</TableHead>
-                        <TableHead>Số vé</TableHead>
+                        <TableHead>Mã giao dịch</TableHead>
+                        <TableHead>Ngày/Giờ thanh toán</TableHead>
+                        <TableHead>Tên khách hàng</TableHead>
                         <TableHead>Tiền vé</TableHead>
-                        <TableHead>Bắp nước</TableHead>
-                        <TableHead>Tổng tiền</TableHead>
-                        <TableHead>Trạng thái</TableHead>
+                        <TableHead>Tiền combo</TableHead>
+                        <TableHead>Thông tin discount</TableHead>
+                        <TableHead>Tổng tiền hóa đơn</TableHead>
+                        <TableHead>Trạng thái giao dịch</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {paginatedInvoices.length === 0 ? (
                         <TableRow>
-                          <TableCell colSpan={11} className="h-24 text-center text-gray-500">
+                          <TableCell colSpan={8} className="h-24 text-center text-gray-500">
                             Không có dữ liệu
                           </TableCell>
                         </TableRow>
                       ) : (
                         paginatedInvoices.map((invoice) => (
                           <TableRow key={invoice.id} className="hover:bg-gray-50">
+                            <TableCell className="font-medium text-blue-600">{invoice.transactionId}</TableCell>
                             <TableCell>
                               <div className="flex flex-col">
                                 <span className="font-medium">{invoice.date}</span>
@@ -188,21 +200,12 @@ export function CinemaInvoicesDialog({ isOpen, onClose, cinema, startDate, endDa
                               </div>
                             </TableCell>
                             <TableCell>{invoice.customer}</TableCell>
-                            <TableCell className="max-w-[150px] truncate" title={invoice.movie}>
-                              {invoice.movie}
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex flex-col">
-                                <span className="font-medium">{invoice.screen}</span>
-                                <span className="text-sm text-gray-500">{invoice.seats}</span>
-                              </div>
-                            </TableCell>
-                            <TableCell className="text-center">{invoice.ticketCount}</TableCell>
                             <TableCell>{formatCurrency(invoice.ticketPrice)}</TableCell>
                             <TableCell>{formatCurrency(invoice.concessionAmount)}</TableCell>
+                            <TableCell className="text-sm">{invoice.discount}</TableCell>
                             <TableCell className="font-medium">{formatCurrency(invoice.totalAmount)}</TableCell>
                             <TableCell>
-                              <Badge className={getStatusColor(invoice.status)}>{invoice.status}</Badge>
+                              <Badge className={getStatusColor(invoice.status)}>{getStatusText(invoice.status)}</Badge>
                             </TableCell>
                           </TableRow>
                         ))
@@ -217,7 +220,7 @@ export function CinemaInvoicesDialog({ isOpen, onClose, cinema, startDate, endDa
                 <div className="flex items-center justify-between">
                   <div className="text-sm text-gray-500">
                     Hiển thị {startIndex + 1}-{Math.min(startIndex + itemsPerPage, filteredInvoices.length)} trên{" "}
-                    {filteredInvoices.length} hóa đơn
+                    {filteredInvoices.length} giao dịch
                   </div>
                   <div className="flex items-center space-x-2">
                     <Button
