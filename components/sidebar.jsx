@@ -108,7 +108,7 @@ export function Sidebar() {
     <>
       <div className="px-3 py-4">
         <div className="mb-8 flex items-center px-2">
-          <h1 className="text-xl font-bold text-blue-700">Hera Cinema Admin</h1>
+          <h1 className="text-xl font-bold text-blue-700">BNC Cinema Admin</h1>
         </div>
         <div className="space-y-1">
         {navItems.map((item, index) => {

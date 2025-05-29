@@ -13,8 +13,6 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Alert, AlertDescription } from "@/components/ui/alert"
 import { useLogin } from "@/hooks/use-auth"
 
 export function LoginDialog({ isOpen, onClose, onLogin, forceOpen = false }) {
@@ -34,10 +32,6 @@ export function LoginDialog({ isOpen, onClose, onLogin, forceOpen = false }) {
     if (errors[name]) {
       setErrors((prev) => ({ ...prev, [name]: "" }))
     }
-  }
-
-  const handleCheckboxChange = (checked) => {
-    setFormData((prev) => ({ ...prev, rememberMe: checked }))
   }
 
   const togglePasswordVisibility = () => {
@@ -132,22 +126,6 @@ export function LoginDialog({ isOpen, onClose, onLogin, forceOpen = false }) {
             </div>
             {errors.password && <p className="text-sm text-red-500">{errors.password}</p>}
           </div>
-
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="rememberMe"
-              checked={formData.rememberMe}
-              onCheckedChange={handleCheckboxChange}
-              disabled={isLoading}
-            />
-            <label
-              htmlFor="rememberMe"
-              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-            >
-              Ghi nhớ đăng nhập
-            </label>
-          </div>
-
           <DialogFooter className="pt-4">
             <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700" disabled={isLoading}>
               {isLoading ? "Đang đăng nhập..." : "Đăng nhập"}
