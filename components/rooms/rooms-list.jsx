@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { Edit, Trash2, Eye, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useGetSeatsByRoomId } from "@/hooks/use-seat";
-import { useGetRooms, useCreateRoom, useUpdateRoom } from "@/hooks/use-room";
+import { useGetRooms, useCreateRoom, useUpdateRoom, useDeleteRoom } from "@/hooks/use-room";
 
 import {
   Table,
@@ -61,6 +61,7 @@ export function RoomsList({ cinemaId }) {
   const [dialogMode, setDialogMode] = useState("view");
   const [seatsFromApi, setSeatsFromApi] = useState([]);
 
+  const { mutate: deleteRoom, isLoading: isDeleting } = useDeleteRoom();
   const { mutate: createRoom, isLoading: isCreating } = useCreateRoom();
   const { mutate: updateRoom, isLoading: isUpdating } = useUpdateRoom();
   const { data: rooms, isLoading } = useGetRooms(cinemaId);
@@ -73,6 +74,24 @@ export function RoomsList({ cinemaId }) {
 
   const handleDeleteConfirm = () => {
     setIsDeleteDialogOpen(false);
+    deleteRoom({ id: roomToDelete }, {
+      onSuccess: () => {
+        toast({
+          title: "Thành công",
+          description: "Xóa phòng chiếu thành công",
+          variant: "default",
+          icon: <CheckCircle2 className="h-5 w-5 text-green-500" />,
+        });
+      },
+      onError: (error) => {
+        toast({
+          title: "Lỗi",
+          description: error.message || "Có lỗi xảy ra khi xóa phòng chiếu",
+          variant: "default",
+          icon: <XCircle className="h-5 w-5 text-red-500" />,
+        });
+      },
+    });
     setRoomToDelete(null);
   };
 
@@ -204,8 +223,7 @@ export function RoomsList({ cinemaId }) {
               <Table>
                 <TableHeader className="bg-gray-50">
                   <TableRow>
-                    <TableHead className="text-center">ID</TableHead>
-                    <TableHead className="text-center">Tên phòng</TableHead>
+                    <TableHead >Tên phòng</TableHead>
                     <TableHead className="text-center">Sức chứa</TableHead>
                     <TableHead className="text-center">Loại phòng</TableHead>
                     <TableHead className="text-center">Số hàng</TableHead>
@@ -225,15 +243,9 @@ export function RoomsList({ cinemaId }) {
                       </TableCell>
                     </TableRow>
                   ) : (
-                    rooms.map((room, index) => (
+                    rooms.sort((a, b) => a.name.localeCompare(b.name)).map((room, index) => (
                       <TableRow key={room.id} className="hover:bg-gray-50">
-                        <TableCell
-                          className="font-medium text-center"
-                          title={`Room ID: ${room.id}`}
-                        >
-                          {index + 1}
-                        </TableCell>
-                        <TableCell className="font-medium text-blue-600 truncate max-w-[200px] text-center">
+                        <TableCell className="font-medium text-blue-600 truncate max-w-[200px]">
                           {room.name}
                         </TableCell>
                         <TableCell className="text-center">
@@ -324,7 +336,7 @@ export function RoomsList({ cinemaId }) {
             >
               Hủy
             </Button>
-            <Button variant="destructive" onClick={handleDeleteConfirm}>
+            <Button variant="destructive" onClick={handleDeleteConfirm} disabled={isDeleting}>
               Xóa
             </Button>
           </DialogFooter>
@@ -336,6 +348,8 @@ export function RoomsList({ cinemaId }) {
         onClose={() => setIsRoomDialogOpen(false)}
         room={selectedRoom}
         mode={dialogMode}
+        setDialogMode={setDialogMode}
+        setIsRoomDialogOpen={setIsRoomDialogOpen}
         onSave={handleSaveRoom}
         cinemaId={cinemaId}
       />

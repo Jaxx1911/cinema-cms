@@ -51,6 +51,7 @@ export default function CinemaList({ handleViewCinema, handleDeleteClick }) {
               .filter((cinema) =>
                 cinema.name.toLowerCase().includes(searchTerm.toLowerCase())
               )
+              .sort((a, b) => a.name.localeCompare(b.name))
               .map((cinema) => (
                 <TableRow key={cinema.id} className="hover:bg-gray-50">
                   <TableCell>

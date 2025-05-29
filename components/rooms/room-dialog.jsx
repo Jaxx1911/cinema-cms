@@ -43,10 +43,6 @@ export function RoomDialog({
     row_count: "",
     column_count: "",
     is_active: true,
-    vip_row_start: "",
-    vip_row_end: "",
-    vip_col_start: "",
-    vip_col_end: "",
   });
 
   const handleChange = (e) => {
@@ -69,10 +65,6 @@ export function RoomDialog({
       row_count: "",
       column_count: "",
       is_active: true,
-      vip_row_start: "",
-      vip_row_end: "",
-      vip_col_start: "",
-      vip_col_end: "",
     });
   };
 
@@ -81,6 +73,12 @@ export function RoomDialog({
       resetForm();
     }
     onClose();
+  };
+
+  const handleSwitchEdit = () => {
+    setIsRoomDialogOpen(false);
+    setDialogMode("edit");
+    setIsRoomDialogOpen(true);
   };
 
   const handleSubmit = (e) => {
@@ -95,10 +93,40 @@ export function RoomDialog({
     ? "Chỉnh sửa phòng chiếu"
     : "Chi tiết phòng chiếu";
 
-  function renderSeatMatrix(rowCount, colCount, vipArea) {
+  const calculateVipArea = (rowCount, colCount) => {
+    rowCount = Number(rowCount);
+    colCount = Number(colCount);
+    
+    if (!rowCount || !colCount || rowCount < 5 || colCount < 7) {
+      return {
+        vip_row_start: null,
+        vip_row_end: null,
+        vip_col_start: null,
+        vip_col_end: null,
+      };
+    }
+
+    // VIP từ hàng D đến hàng cách hàng couple 1 hàng
+    // Ví dụ: nếu có 7 hàng (A,B,C,D,E,F,G) thì couple là G, VIP từ D đến E (cách G 1 hàng là F)
+    const vipRowStart = "D"; // Hàng D
+    const vipRowEnd = String.fromCharCode(65 + rowCount - 3); // Hàng cuối -2 (cách couple 1 hàng)
+    const vipColStart = 4;
+    const vipColEnd = colCount - 3;
+
+    return {
+      vip_row_start: vipRowStart,
+      vip_row_end: vipRowEnd,
+      vip_col_start: vipColStart,
+      vip_col_end: vipColEnd,
+    };
+  };
+
+  function renderSeatMatrix(rowCount, colCount) {
     rowCount = Number(rowCount);
     colCount = Number(colCount);
     if (!rowCount || !colCount) return null;
+
+    const vipArea = calculateVipArea(rowCount, colCount);
 
     // Helper kiểm tra ghế có phải VIP không
     const isVip = (rowChar, colNum) => {
@@ -134,15 +162,12 @@ export function RoomDialog({
         {Array.from({ length: rowCount }).map((_, rowIdx) => {
           const rowChar = String.fromCharCode(65 + rowIdx);
 
-          // Hàng cuối: ghế đôi
+          // Hàng cuối: ghế đôi (couple)
           if (rowChar === lastRowChar) {
             const doubleSeats = [];
             for (let colIdx = 0; colIdx < colCount; colIdx += 2) {
               const colNum1 = colIdx + 1;
               const colNum2 = colIdx + 2;
-              // Ghế đôi là VIP nếu cả 2 ghế đều là VIP
-              const isDoubleVip =
-                isVip(rowChar, colNum1) && isVip(rowChar, colNum2);
               doubleSeats.push(
                 <div
                   key={colIdx}
@@ -150,7 +175,7 @@ export function RoomDialog({
                     width: 86,
                     height: 40,
                     marginRight: 6,
-                    background: isDoubleVip ? "#e11d48" : "#77103C", // hồng cho VIP, đỏ cho thường
+                    background: "#77103C", // Màu đỏ cho ghế đôi
                     borderRadius: 6,
                     display: "flex",
                     alignItems: "center",
@@ -210,39 +235,12 @@ export function RoomDialog({
     );
   }
 
-  // Lấy danh sách ghế theo roomId
+  // Lấy danh sách ghế theo roomId (chỉ để kiểm tra, không dùng cho VIP calculation)
   const { data, isLoading, error } = useGetSeatsByRoomId(room?.id);
 
-
-  // Tính toán khu vực ghế VIP
-  const vipSeats = (data || []).filter(
-    seat => seat.type && seat.type.trim().toLowerCase() === "vip"
-  );
-
-  const rowNumbers = vipSeats
-    .map(seat => seat.row_number)
-    .filter(r => typeof r === "string" && r.length > 0);
-
-  const colNumbers = vipSeats
-    .map(seat => Number(seat.seat_number))
-    .filter(n => !isNaN(n));
-
-  const vipArea = {
-    vip_row_start: rowNumbers.length ? rowNumbers.reduce((a, b) => a < b ? a : b) : null,
-    vip_row_end: rowNumbers.length ? rowNumbers.reduce((a, b) => a > b ? a : b) : null,
-    vip_col_start: colNumbers.length ? Math.min(...colNumbers) : null,
-    vip_col_end: colNumbers.length ? Math.max(...colNumbers) : null,
-  };
-
-  const vipAreaFromForm = {
-    vip_row_start: formData.vip_row_start?.toUpperCase(),
-    vip_row_end: formData.vip_row_end?.toUpperCase(),
-    vip_col_start: Number(formData.vip_col_start),
-    vip_col_end: Number(formData.vip_col_end),
-  };
   useEffect(() => {
-    if (isEditMode && room && vipArea) {
-      console.log("room data:", room, vipArea);
+    if (isEditMode && room) {
+      console.log("room data:", room);
       setFormData({
         id: room.id,
         name: room.name || "",
@@ -251,10 +249,6 @@ export function RoomDialog({
         row_count: room.row_count || "",
         column_count: room.column_count || "",
         is_active: room.is_active,
-        vip_row_start: vipArea.vip_row_start ? String(vipArea.vip_row_start) : "",
-        vip_row_end: vipArea.vip_row_end ? String(vipArea.vip_row_end) : "",
-        vip_col_start: vipArea.vip_col_start ? String(vipArea.vip_col_start) : "",
-        vip_col_end: vipArea.vip_col_end ? String(vipArea.vip_col_end) : "",
       });
     } else if (isAddMode) {
       resetForm();
@@ -273,7 +267,7 @@ export function RoomDialog({
               {/* Bên trái: Ma trận ghế (cuộn ngang nếu cần) */}
               <div className="w-full md:w-3/4 bg-gray-100 rounded-xl p-8 overflow-x-auto">
                 <div className="flex flex-col items-center min-w-max">
-                  {renderSeatMatrix(formData.row_count, formData.column_count, vipAreaFromForm)}
+                  {renderSeatMatrix(formData.row_count, formData.column_count)}
                 </div>
               </div>
               {/* Bên phải: Form nhập liệu */}
@@ -393,81 +387,34 @@ export function RoomDialog({
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-gray-800">
-                    Khu vực ghế VIP
-                  </h3>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label
-                        htmlFor="vip_row_start"
-                        className="font-semibold text-gray-700"
-                      >
-                        Hàng bắt đầu
-                      </Label>
-                      <Input
-                        id="vip_row_start"
-                        name="vip_row_start"
-                        type="text"
-                        value={formData.vip_row_start ?? ""}
-                        onChange={handleChange}
-                        placeholder="Ví dụ: C"
-                        className="h-12 text-base"
-                      />
+                
+                {/* Thông tin VIP tự động */}
+                {formData.row_count && formData.column_count && (
+                  <div className="space-y-4 p-4 bg-purple-50 rounded-lg">
+                    <h3 className="text-lg font-semibold text-purple-800">
+                      Khu vực ghế VIP (Tự động)
+                    </h3>
+                    <div className="text-sm text-purple-700">
+                      {(() => {
+                        const vipArea = calculateVipArea(formData.row_count, formData.column_count);
+                        if (!vipArea.vip_row_start) {
+                          return "Cần ít nhất 5 hàng và 7 cột để có ghế VIP";
+                        }
+                        return `Hàng ${vipArea.vip_row_start} - ${vipArea.vip_row_end}, Cột ${vipArea.vip_col_start} - ${vipArea.vip_col_end}`;
+                      })()}
                     </div>
-                    <div className="space-y-2">
-                      <Label
-                        htmlFor="vip_row_end"
-                        className="font-semibold text-gray-700"
-                      >
-                        Hàng kết thúc
-                      </Label>
-                      <Input
-                        id="vip_row_end"
-                        name="vip_row_end"
-                        type="text"
-                        value={formData.vip_row_end}
-                        onChange={handleChange}
-                        placeholder="Ví dụ: E"
-                        className="h-12 text-base"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label
-                        htmlFor="vip_col_start"
-                        className="font-semibold text-gray-700"
-                      >
-                        Cột bắt đầu
-                      </Label>
-                      <Input
-                        id="vip_col_start"
-                        name="vip_col_start"
-                        type="number"
-                        value={formData.vip_col_start}
-                        onChange={handleChange}
-                        placeholder="Ví dụ: 3"
-                        className="h-12 text-base"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label
-                        htmlFor="vip_col_end"
-                        className="font-semibold text-gray-700"
-                      >
-                        Cột kết thúc
-                      </Label>
-                      <Input
-                        id="vip_col_end"
-                        name="vip_col_end"
-                        type="number"
-                        value={formData.vip_col_end}
-                        onChange={handleChange}
-                        placeholder="Ví dụ: 8"
-                        className="h-12 text-base"
-                      />
+                    <div className="text-xs text-purple-600">
+                      • Ghế VIP: Từ hàng D đến hàng {(() => {
+                        const vipArea = calculateVipArea(formData.row_count, formData.column_count);
+                        return vipArea.vip_row_end || "N/A";
+                      })()}, Cột {(() => {
+                        const vipArea = calculateVipArea(formData.row_count, formData.column_count);
+                        return vipArea.vip_col_start && vipArea.vip_col_end ? `${vipArea.vip_col_start}-${vipArea.vip_col_end}` : "N/A";
+                      })()}<br/>
+                      • Hàng cuối: Ghế đôi (Couple)
                     </div>
                   </div>
-                </div>
+                )}
               </div>
             </div>
             <DialogFooter className="mt-6">
@@ -492,7 +439,7 @@ export function RoomDialog({
               {/* Bên trái: Ma trận ghế (cuộn ngang nếu cần) */}
               <div className="w-full md:w-3/4 bg-gray-100 rounded-xl p-8 overflow-x-auto">
                 <div className="flex flex-col items-center min-w-max">
-                  {renderSeatMatrix(formData.row_count, formData.column_count, vipAreaFromForm)}
+                  {renderSeatMatrix(formData.row_count, formData.column_count)}
                 </div>
               </div>
               {/* Bên phải: Form nhập liệu */}
@@ -612,85 +559,41 @@ export function RoomDialog({
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-gray-800">
-                  Khu vực ghế VIP
-                </h3>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label
-                      htmlFor="vip_row_start"
-                      className="font-semibold text-gray-700"
-                    >
-                      Hàng bắt đầu
-                    </Label>
-                    <Input
-                      id="vip_row_start"
-                      name="vip_row_start"
-                      type="text"
-                      value={formData.vip_row_start ?? ""}
-                      onChange={handleChange}
-                      className="h-12 text-base"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label
-                      htmlFor="vip_row_end"
-                      className="font-semibold text-gray-700"
-                    >
-                      Hàng kết thúc
-                    </Label>
-                    <Input
-                      id="vip_row_end"
-                      name="vip_row_end"
-                      type="text"
-                      value={formData.vip_row_end}
-                      onChange={handleChange}
-                      className="h-12 text-base"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label
-                      htmlFor="vip_col_start"
-                      className="font-semibold text-gray-700"
-                    >
-                      Cột bắt đầu
-                    </Label>
-                    <Input
-                      id="vip_col_start"
-                      name="vip_col_start"
-                      type="number"
-                      value={formData.vip_col_start}
-                      onChange={handleChange}
-                      className="h-12 text-base"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label
-                      htmlFor="vip_col_end"
-                      className="font-semibold text-gray-700"
-                    >
-                      Cột kết thúc
-                    </Label>
-                    <Input
-                      id="vip_col_end"
-                      name="vip_col_end"
-                      type="number"
-                      value={formData.vip_col_end}
-                      onChange={handleChange}
-                      className="h-12 text-base"
-                    />
-                  </div>
-                </div>
-              </div>
                 
+                {/* Thông tin VIP tự động */}
+                {formData.row_count && formData.column_count && (
+                  <div className="space-y-4 p-4 bg-purple-50 rounded-lg">
+                    <h3 className="text-lg font-semibold text-purple-800">
+                      Khu vực ghế VIP (Tự động)
+                    </h3>
+                    <div className="text-sm text-purple-700">
+                      {(() => {
+                        const vipArea = calculateVipArea(formData.row_count, formData.column_count);
+                        if (!vipArea.vip_row_start) {
+                          return "Cần ít nhất 5 hàng và 7 cột để có ghế VIP";
+                        }
+                        return `Hàng ${vipArea.vip_row_start} - ${vipArea.vip_row_end}, Cột ${vipArea.vip_col_start} - ${vipArea.vip_col_end}`;
+                      })()}
+                    </div>
+                    <div className="text-xs text-purple-600">
+                      • Ghế VIP: Từ hàng D đến hàng {(() => {
+                        const vipArea = calculateVipArea(formData.row_count, formData.column_count);
+                        return vipArea.vip_row_end || "N/A";
+                      })()}, Cột {(() => {
+                        const vipArea = calculateVipArea(formData.row_count, formData.column_count);
+                        return vipArea.vip_col_start && vipArea.vip_col_end ? `${vipArea.vip_col_start}-${vipArea.vip_col_end}` : "N/A";
+                      })()}<br/>
+                      • Hàng cuối: Ghế đôi (Couple)
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
             <DialogFooter className="mt-6">
               <Button type="button" variant="outline" onClick={handleClose}>
                 {isViewMode ? "Đóng" : "Hủy"}
               </Button>
-              <Button type="submit">
+              <Button type="submit" className="bg-blue-700 hover:bg-blue-800">
                   Lưu thay đổi
               </Button>
             </DialogFooter>
@@ -709,7 +612,7 @@ export function RoomDialog({
             {/* Bên trái: Ma trận ghế (cuộn ngang nếu cần) */}
             <div className="w-full md:w-3/4 bg-gray-100 rounded-xl p-8 overflow-x-auto">
               <div className="flex flex-col items-center min-w-max">
-                {renderSeatMatrix(room?.row_count, room?.column_count, vipArea)}
+                {renderSeatMatrix(room?.row_count, room?.column_count)}
               </div>
             </div>
 
@@ -777,75 +680,40 @@ export function RoomDialog({
                 />
               </div>
               
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-gray-800">
+              <div className="space-y-4 p-4 bg-purple-50 rounded-lg">
+                <h3 className="text-lg font-semibold text-purple-800">
                   Khu vực ghế VIP
                 </h3>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label
-                      htmlFor="vip_row_start"
-                      className="font-semibold text-gray-700"
-                    >
-                      Hàng bắt đầu
-                    </Label>
-                    <Input
-                      value={vipArea.vip_row_start ?? ""}
-                      readOnly
-                      disabled
-                      className="h-12 text-base"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label
-                      htmlFor="vip_row_end"
-                      className="font-semibold text-gray-700"
-                    >
-                      Hàng kết thúc
-                    </Label>
-                    <Input
-                      value={vipArea.vip_row_end ?? ""}
-                      readOnly
-                      disabled
-                      className="h-12 text-base"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label
-                      htmlFor="vip_col_start"
-                      className="font-semibold text-gray-700"
-                    >
-                      Cột bắt đầu
-                    </Label>
-                    <Input
-                      value={vipArea.vip_col_start ?? ""}
-                      readOnly
-                      disabled
-                      className="h-12 text-base"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label
-                      htmlFor="vip_col_end"
-                      className="font-semibold text-gray-700"
-                    >
-                      Cột kết thúc
-                    </Label>
-                    <Input
-                      value={vipArea.vip_col_end ?? ""}
-                      readOnly
-                      disabled
-                      className="h-12 text-base"
-                    />
-                  </div>
-                </div>
+                {(() => {
+                  const vipArea = calculateVipArea(room?.row_count, room?.column_count);
+                  return vipArea.vip_row_start ? (
+                    <div className="space-y-3">
+                      <div className="text-sm text-purple-700">
+                        Hàng {vipArea.vip_row_start} - {vipArea.vip_row_end}, 
+                        Cột {vipArea.vip_col_start} - {vipArea.vip_col_end}
+                      </div>
+                      <div className="text-xs text-purple-600">
+                        • Ghế VIP: Từ hàng {vipArea.vip_row_start} đến hàng {vipArea.vip_row_end}, 
+                        Cột {vipArea.vip_col_start}-{vipArea.vip_col_end}<br/>
+                        • Hàng cuối: Ghế đôi (Couple)
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-sm text-gray-500">
+                      Cần ít nhất 5 hàng và 7 cột để có ghế VIP
+                    </div>
+                  );
+                })()}
               </div>
             </div>
           </div>
 
           <DialogFooter className="mt-4">
-            <Button type="button" variant="outline" onClick={handleClose}>
+            <Button type="button" className="border-gray-300 border bg-white text-gray-700 hover:bg-gray-100" onClick={handleClose}>
               Đóng
+            </Button>
+            <Button type="button" className="bg-blue-700 hover:bg-blue-800" onClick={handleSwitchEdit}>
+              Chỉnh sửa
             </Button>
           </DialogFooter>
         </DialogContent>

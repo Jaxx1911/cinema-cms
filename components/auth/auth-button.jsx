@@ -17,6 +17,9 @@ import { useUser } from "@/hooks/use-auth"
 export function AuthButton() {
   const { token, logout, openLoginDialog } = useAuth()
   const { user, error } = useUser()
+  if (error) {
+    logout()
+  }
   if (token) {
     return (
       <DropdownMenu>

@@ -6,7 +6,8 @@ import {
   getRoomById, 
   createRoom, 
   updateRoom, 
-  getSeatsByRoomId 
+  getSeatsByRoomId,
+  deleteRoom
 } from "@/services/room-service"
 
 export function useGetRooms(cinemaId) {
@@ -60,4 +61,19 @@ export function useUpdateRoom() {
   }
 }
 
+export function useDeleteRoom() {
+  const queryClient = useQueryClient();
+  const { data, isLoading, error, mutate } = useMutation({
+    mutationFn: ({ id }) => deleteRoom(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["rooms"] });
+    },
+  })
 
+  return {
+    data: data?.body || null,
+    isLoading,
+    error: error?.message || null,
+    mutate,
+  }
+}
