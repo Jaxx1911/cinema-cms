@@ -18,11 +18,12 @@ import { useGetCinemaById, useUpdateCinema, useCreateCinema } from "@/hooks/use-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useParams,useRouter } from "next/navigation";
 import { CinemaDialog } from "@/components/cinemas/cinema-dialog";
-import { toast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 
 export default function CinemaDetailsPage() {
   const params = useParams();
-  const { data: cinema, isLoading, error } = useGetCinemaById(params.id);
+  const { toast } = useToast();
+  const { data: cinema, isLoading, error, refetch } = useGetCinemaById(params.id);
   const [isCinemaDialogOpen, setIsCinemaDialogOpen] = useState(false);
   const [selectedCinema, setSelectedCinema] = useState(null);
   const [selectedRoom, setSelectedRoom] = useState(null);
@@ -35,7 +36,6 @@ export default function CinemaDetailsPage() {
   
   const [cinemaData, setCinemaData] = useState(null);
   const [isEditMode, setIsEditMode] = useState(false);
-  const [cinemas, setCinemas] = useState();
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [formData, setFormData] = useState({
     id: "",
@@ -47,6 +47,9 @@ export default function CinemaDetailsPage() {
   });
 
   const handleSaveCinema = async (cinema) => {
+    console.log("handleSaveCinema called with:", cinema);
+    console.log("dialogMode:", dialogMode);
+    
     if (!cinema || !cinema.name || !cinema.address) {
       console.error("Dữ liệu rạp phim không hợp lệ:", cinema);
       toast({
@@ -58,61 +61,55 @@ export default function CinemaDetailsPage() {
       return;
     }
 
-    try {
-      if (dialogMode === "add") {
-        createCinema(cinema, {
-          onSuccess: (response) => {
-            setCinemas([...cinemas, response.data]);
-            toast({
-              title: "Thành công",
-              description: "Đã thêm rạp phim mới.",
-              variant: "default",
-              icon: <CheckCircle2 className="h-5 w-5 text-green-500" />,
-            });
-            setIsCinemaDialogOpen(false);
-            resetForm();
-          },
-          onError: (error) => {
-            console.error("Lỗi khi tạo rạp:", error);
-            toast({
-              title: "Lỗi",
-              description: error.message || "Có lỗi xảy ra khi tạo rạp phim.",
-              variant: "destructive",
-              icon: <XCircle className="h-5 w-5 text-red-500" />,
-            });
-          }
-        });
-      } else if (dialogMode === "edit") {
-        updateCinema(cinema.id, cinema, {
-          onSuccess: (response) => {
-            setCinemas(cinemas.map((c) => (c.id === cinema.id ? cinema : c)));
-            toast({
-              title: "Thành công",
-              description: "Cập nhật rạp phim thành công.",
-              variant: "default",
-              icon: <CheckCircle2 className="h-5 w-5 text-green-500" />,
-            });
-            setIsCinemaDialogOpen(false);
-            resetForm();
-          },
-          onError: (error) => {
-            console.error("Lỗi khi cập nhật rạp:", error);
-            toast({
-              title: "Lỗi",
-              description: error.message || "Có lỗi xảy ra khi cập nhật rạp phim.",
-              variant: "destructive",
-              icon: <XCircle className="h-5 w-5 text-red-500" />,
-            });
-          }
-        });
-      }
-    } catch (error) {
-      console.error("Lỗi khi lưu rạp:", error);
-      toast({
-        title: "Lỗi",
-        description: error.message || "Có lỗi xảy ra khi lưu.",
-        variant: "destructive",
-        icon: <XCircle className="h-5 w-5 text-red-500" />,
+    if (dialogMode === "add") {
+      console.log("Creating cinema with data:", cinema);
+      createCinema(cinema, {
+        onSuccess: (data) => {
+          console.log("Create success, received data:", data);
+          toast({
+            title: "Thành công",
+            description: "Đã thêm rạp phim mới.",
+            variant: "default",
+            icon: <CheckCircle2 className="h-5 w-5 text-green-500" />,
+          });
+          setIsCinemaDialogOpen(false);
+          resetForm();
+        },
+        onError: (error) => {
+          console.error("Create error:", error);
+          toast({
+            title: "Lỗi",
+            description: error?.message || "Có lỗi xảy ra khi tạo rạp phim.",
+            variant: "destructive",
+            icon: <XCircle className="h-5 w-5 text-red-500" />,
+          });
+        }
+      });
+    } else if (dialogMode === "edit") {
+      console.log("Updating cinema with data:", { id: cinema.id, cinema });
+      updateCinema({ id: cinema.id, cinema }, {
+        onSuccess: (data) => {
+          console.log("Update success, received data:", data);
+          toast({
+            title: "Thành công",
+            description: "Cập nhật rạp phim thành công.",
+            variant: "default",
+            icon: <CheckCircle2 className="h-5 w-5 text-green-500" />,
+          });
+          setIsCinemaDialogOpen(false);
+          resetForm();
+          // Refetch the current cinema data to see the updates
+          refetch();
+        },
+        onError: (error) => {
+          console.error("Update error:", error);
+          toast({
+            title: "Lỗi",
+            description: error?.message || "Có lỗi xảy ra khi cập nhật rạp phim.",
+            variant: "destructive",
+            icon: <XCircle className="h-5 w-5 text-red-500" />,
+          });
+        }
       });
     }
   };

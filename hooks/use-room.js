@@ -11,7 +11,7 @@ import {
 } from "@/services/room-service"
 
 export function useGetRooms(cinemaId) {
-  const { data, isLoading, error } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["rooms", cinemaId],
     queryFn: () => getRooms(cinemaId),
     enabled: !!cinemaId,
@@ -20,12 +20,13 @@ export function useGetRooms(cinemaId) {
   return { 
     data: data?.body || [], 
     isLoading, 
-    error: error?.message || null 
+    error: error?.message || null,
+    refetch
   }
 }
 
 export function useGetRoomById(id) {
-  const { data, isLoading, error } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["room", id],
     queryFn: () => getRoomById(id),
     enabled: !!id,
@@ -34,7 +35,8 @@ export function useGetRoomById(id) {
   return { 
     data: data?.body || null, 
     isLoading, 
-    error: error?.message || null 
+    error: error?.message || null,
+    refetch
   }
 }
 
@@ -49,8 +51,12 @@ export const useCreateRoom = () => {
 };
 
 export function useUpdateRoom() {
+  const queryClient = useQueryClient();
   const { data, isLoading, error, mutate } = useMutation({
     mutationFn: ({ id, roomData }) => updateRoom(id, roomData),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["rooms"] });
+    },
   })
 
   return {

@@ -124,7 +124,6 @@ export function CinemaDialog({
     }
     onSave(formData);
     onClose();
-    window.location.reload();
   };
 
   const dialogTitle = isAddMode

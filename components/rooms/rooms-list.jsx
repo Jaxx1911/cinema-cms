@@ -23,7 +23,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { RoomDialog } from "./room-dialog";
-import { toast } from "@/components/ui/use-toast";
+import { useToast } from "@/components/ui/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CheckCircle2, XCircle } from "lucide-react";
 
@@ -54,6 +54,7 @@ function generateAllSeats(rowCount, colCount, vipArea) {
 }
 
 export function RoomsList({ cinemaId }) {
+  const { toast } = useToast();
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [roomToDelete, setRoomToDelete] = useState(null);
   const [isRoomDialogOpen, setIsRoomDialogOpen] = useState(false);
