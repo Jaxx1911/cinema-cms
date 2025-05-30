@@ -100,6 +100,11 @@ export function ShowtimeList({
               const screen = screens.find((s) => s.id === showtime.room_id)
               const startTime = new Date(showtime.start_time)
               const endTime = new Date(showtime.end_time)
+              
+              // Calculate sold tickets count
+              const soldTicketsCount = showtime?.sold_tickets || 0
+              const hasTicketsSold = soldTicketsCount > 0
+              
               return (
                 <TableRow key={showtime.id} className="hover:bg-gray-50">
                   <TableCell className="font-medium text-blue-600">{movie?.title || "N/A"}</TableCell>
@@ -134,7 +139,9 @@ export function ShowtimeList({
                         variant="ghost"
                         size="icon"
                         onClick={() => onDelete(showtime.id)}
-                        className="text-gray-500 hover:text-red-600"
+                        disabled={hasTicketsSold}
+                        className={`text-gray-500 ${hasTicketsSold ? 'opacity-50 cursor-not-allowed' : 'hover:text-red-600'}`}
+                        title={hasTicketsSold ? `Không thể xóa - đã bán ${soldTicketsCount} vé` : 'Xóa suất chiếu'}
                       >
                         <Trash2 className="h-4 w-4" />
                         <span className="sr-only">Xóa</span>

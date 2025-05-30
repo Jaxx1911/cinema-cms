@@ -15,7 +15,7 @@ export const getCinemas = async () => {
 }
 
 export const getScreensByCinema = async (cinemaId) => {
-  const response = await baseQuery.get(`/room/cinema/${cinemaId}`)
+  const response = await baseQuery.get(`/room/cinema/${cinemaId}?status=active`)
   return response.data
 } 
 
