@@ -24,9 +24,7 @@ export const getCinemaById = async (id) => {
     return response.data
 }
 export const updateCinema = async (id, cinema) => {
-  baseQuery.defaults.headers.common["Content-Type"] = "multipart/form-data"
-  console.log(cinema)
-  const response = await baseQuery.putForm(`/cinema/${id}`, cinema)
+  const response = await baseQuery.put(`/cinema/${id}`, cinema)
   return response.data
 }
 export const deleteCinema = async (id) => {
