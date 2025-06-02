@@ -94,7 +94,7 @@ export function ShowtimeList({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {showtimes.map((showtime) => {
+            {showtimes.sort((a, b) => new Date(a.start_time) - new Date(b.start_time)).map((showtime) => {
               const movie = newMovies.find((m) => m.id === showtime.movie_id) || incomingMovies.find((m) => m.id === showtime.movie_id)
               const cinema = cinemas.find((c) => c.id === selectedCinema)
               const screen = screens.find((s) => s.id === showtime.room_id)

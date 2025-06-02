@@ -61,7 +61,7 @@ export default function ShowtimesPage() {
       onError: (error) => {
         toast({
           title: "Lỗi",
-          description: error.message || "Có lỗi xảy ra khi xóa suất chiếu",
+          description: "Có lỗi xảy ra hoặc suất chiếu đã có người đặt vé",
           icon: <XCircle className="h-5 w-5 text-red-500" />,
         })
       }

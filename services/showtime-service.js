@@ -14,7 +14,7 @@ export const getShowtimes = async (movieId, cinemaId, screenId, startDate, endDa
     params: { 
       movie_id: movieId, 
       cinema_id: cinemaId, 
-      screen_id: screenId, 
+      room_id: screenId, 
       from_date: startDate, 
       to_date: endDate,
       page: page,
